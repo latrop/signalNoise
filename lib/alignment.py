@@ -29,10 +29,27 @@ class Reference(object):
                 self.yObj = yCen
                 self.objSEParams = None
             elif name.startswith("st"):
-                magb = float(line.split()[3])
-                magv = float(line.split()[4])
-                magr = float(line.split()[5])
-                magi = float(line.split()[6])
+                magb = line.split()[3]
+                if "-" not in magb:
+                    magb = float(magb)
+                else:
+                    magb = None
+                magv = line.split()[4]
+                if "-" not in magv:
+                    magv = float(magv)
+                else:
+                    magv = None
+                magr = line.split()[5]
+                if "-" not in magr:
+                    magr = float(magr)
+                else:
+                    magr = None
+                magi = line.split()[6]
+                if "-" not in magi:
+                    magi = float(magi)
+                else:
+                    magi = None
+
                 self.standarts.append({"name": name, "xCen": xCen, "yCen": yCen, "magb": magb,
                                        "magv": magv, "magr": magr, "magi": magi})
 

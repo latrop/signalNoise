@@ -86,9 +86,10 @@ def get_photometry(cat, ref, filtName):
         flux = stObs["seParams"].fluxAuto
         fluxErr = stObs["seParams"].fluxAutoErr
         stSn.append([st['name'], abs(flux/fluxErr)])
-        magzpt = 2.5*log10(flux) + st["mag%s"%filtName.lower()]
-        fluxzpt.append(10**(0.4*(30.0-magzpt)))
-    meanZpt = 30 - 2.5*log10(np.mean(fluxzpt))
+        if not st["mag%s"%filtName.lower()] is None:
+            magzpt = 2.5*log10(flux) + st["mag%s"%filtName.lower()]
+            fluxzpt.append(10**(0.4*(30.0-magzpt)))
+
 
     # find object magnitude and s/n ratio
     xCen = ref.objSEParams.xImage
@@ -97,7 +98,11 @@ def get_photometry(cat, ref, filtName):
     objFlux = objPhotParams.fluxAuto
     objFluxErr = objPhotParams.fluxAutoErr
     objSn = abs(objFlux/objFluxErr)
-    objMag = -2.5*log10(objFlux)+meanZpt
+    if not st["mag%s"%filtName.lower()] is None:
+        meanZpt = 30 - 2.5*log10(np.mean(fluxzpt))
+        objMag = -2.5*log10(objFlux)+meanZpt
+    else:
+        objMag = -99.0
 
     return objSn, objMag, stSn
 
