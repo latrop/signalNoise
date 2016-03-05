@@ -67,8 +67,12 @@ class MainApplication(Tk.Frame):
 
     def cycle(self):
         self.check_out_files()
-        self.rightPanel.update_object_info(self.objName, self.filtName, self.addString)
-        self.run_computation()
+        if not self.objName is None:
+            self.rightPanel.update_object_info(self.objName, self.filtName, self.addString)
+            self.run_computation()
+        else:
+            self.rightPanel.update_object_info("---", "---", "---")
+            self.rightPanel.photometryString.set("")
         self.root.after(1000, self.cycle)
         
 
