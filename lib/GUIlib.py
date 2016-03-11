@@ -158,6 +158,8 @@ class RightPanel(Tk.Frame):
         Tk.Label(self.panel, textvariable=self.messagesString).grid(column=0, row=2, sticky=Tk.W)
         self.photometryString = Tk.StringVar()
         Tk.Label(self.panel, textvariable=self.photometryString).grid(column=0, row=3, sticky=Tk.W)
+        self.badImagesString = Tk.StringVar()
+        Tk.Label(self.panel, textvariable=self.badImagesString, fg="red").grid(column=0, row=4, sticky=Tk.W)
         
     def update_object_info(self, objName, filtName, addString):
         s = "Object: %s" % (objName)
@@ -180,5 +182,14 @@ class RightPanel(Tk.Frame):
         string = "Obj S/N: %1.0f/%1.0f\n" % (objSN, objPairSN)
         string += "\n".join(["%s S/N: %1.0f/%1.0f" % (st[0], st[1], st[2]) for st in stSnList])
         self.photometryString.set(string)
+
+    def update_bad_images_info(self, badImagesList):
+        if len(badImagesList) > 0:
+            string = "\nBad images:\n"
+            string += "\n".join(badImagesList)
+        else:
+            string = ""
+        self.badImagesString.set(string)
+        
 
 

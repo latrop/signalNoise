@@ -41,6 +41,8 @@ class MainApplication(Tk.Frame):
         self.currentFilter = None
         self.rawImages = []
         self.magData = []
+        self.objSn = 0
+        self.badObjects = []
         # cache flats
         self.flats = {}
         for filt in 'bvriXY':
@@ -75,7 +77,7 @@ class MainApplication(Tk.Frame):
         else:
             self.rightPanel.update_object_info("---", "---", "---")
             self.rightPanel.photometryString.set("")
-        self.root.after(1000, self.cycle)
+        self.root.after(1500, self.cycle)
         
 
     def check_out_files(self):
@@ -105,6 +107,9 @@ class MainApplication(Tk.Frame):
             self.darkCleanImages = []
             self.magData = []
             self.currentFilter = self.filtName
+            self.objSn = 0
+            self.badObjects = []
+
         if self.objName != self.currentObject:
             # new object is being processed
             self.rawImages = []
@@ -112,6 +117,8 @@ class MainApplication(Tk.Frame):
             self.darkCleanImages = []
             self.currentObject = self.objName
             self.ref = Reference(self.objName)
+            self.objSn = 0
+            self.badObjects = []
             # Clear working directory
             for f in glob.glob(path.join("workDir", "*")):
                 if (not "dark" in path.basename(f)) and (not "bias" in path.basename(f)):
@@ -135,6 +142,8 @@ class MainApplication(Tk.Frame):
                     os.remove(pathToFile)
                 if pathToFile in self.darkCleanImages:
                     self.darkCleanImages.remove(pathToFile)
+                if fName in self.badObjects:
+                    self.badObjects.remove(fName)
 
         # Create the list of images to be processed
         newRawImages = []
@@ -203,6 +212,14 @@ class MainApplication(Tk.Frame):
             objSN, objPairSN, stSnList = get_photometry_polar_mode(self.seCatPolar, self.ref)
             self.rightPanel.show_photometry_data_polar_mode(objSN, objPairSN, stSnList)
             # self.rightPanel.remove_objects_from_plot(upDateFigure=True)
+
+        # Check if object sn ratio decreased (for example due to cloud)
+        if objSn < self.objSn:
+            for f in newRawImages:
+                objName = path.splitext(path.basename(f))[0]
+                self.badObjects.append(objName)
+        self.objSn = objSn
+        self.rightPanel.update_bad_images_info(self.badObjects)
 
         return
 
