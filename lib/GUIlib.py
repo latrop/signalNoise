@@ -78,7 +78,9 @@ class ImagPanel(Tk.Frame):
             self.canvas.show()
 
     def plot_fits_file(self, fitsName):
-        data = pyfits.open(fitsName)[0].data
+        hdu = pyfits.open(fitsName)
+        data = hdu[0].data.copy()
+        hdu.close()
         ySize, xSize = data.shape
         meanValue = np.mean(data)
         stdValue = np.std(data)

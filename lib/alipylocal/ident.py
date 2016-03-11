@@ -246,7 +246,9 @@ def run(ref, ukns, hdu=0, visu=True, skipsaturated=False, r = 5.0, n=500, sexkee
                 ref.makecat(rerun=sexrerun, keepcat=sexkeepcat, verbose=verbose, polarMode=polarMode)
         else:
                 ref.makecat(rerun=sexrerun, keepcat=sexkeepcat, verbose=verbose)
-	ref.makestarlist(skipsaturated=skipsaturated, n=n, verbose=verbose)
+	retCode = ref.makestarlist(skipsaturated=skipsaturated, n=n, verbose=verbose)
+        if retCode:
+                return None
 	if visu:
 		ref.showstars(verbose=verbose)
 	ref.makemorequads(verbose=verbose)

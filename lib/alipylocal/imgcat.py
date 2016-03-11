@@ -64,9 +64,10 @@ class ImgCat:
 			
 			# Given this starlists, what is a good minimal distance for stars in quads ?
  			self.mindist = min(min(xmax - xmin, ymax - ymin) / 10.0, 30.0)
+                        return 0
  				
 		else:
-			raise RuntimeError("No cat : call makecat first !")
+			return 1
 	
 	
 	def makemorequads(self, verbose=True):

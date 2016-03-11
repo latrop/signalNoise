@@ -83,6 +83,9 @@ class Reference(object):
             print "%s not found!" % (self.refImage)
             return
         ident = alipy.ident.run(self.refImage, [observedImage], visu=False, verbose=True, polarMode=polarMode)
+        if ident is None:
+            print "not ok"
+            self.transform = None
         if ident[0].ok is True:
             self.transform = ident[0].trans
         else:
@@ -177,6 +180,7 @@ def coadd_images(imageList, polarMode):
     # refImage image was not remapped, since all other images was remapped
     # to match it, but we want to coadd in as well:
     imagesToCoadd.append(refImage)
+
 
     # Second step: coadd images    
     data = numpy.zeros((outputshape[1], outputshape[0]))

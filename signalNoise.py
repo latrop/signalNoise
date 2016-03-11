@@ -45,8 +45,10 @@ class MainApplication(Tk.Frame):
         self.flats = {}
         for filt in 'bvriXY':
             pathToFlat = path.join("tmp2", "flats", "ff%s.fts" % (filt))  # FIXME
-            fData = pyfits.open(pathToFlat)[0].data
+            hdu = pyfits.open(pathToFlat)
+            fData = hdu[0].data
             self.flats[filt.lower()] = fData / np.mean(fData)
+            hdu.close()
         # GUI stuff:
         self.root = Tk.Tk()
         self.root.title("SignalNoise")
@@ -115,12 +117,31 @@ class MainApplication(Tk.Frame):
                 if (not "dark" in path.basename(f)) and (not "bias" in path.basename(f)):
                     os.remove(f)
 
+        # Observer can delete some raw files if they are bad,
+        # so we need to check if there are files in rawImages list
+        # that are not present on HDD anymore and delete them from
+        # list and from workDir directory
+        imageWasRemoved = False
+        for f in self.rawImages:
+            if not path.exists(f):
+                imageWasRemoved = True
+                self.rawImages.remove(f)
+                fName = path.splitext(path.basename(f))[0]
+                pathToFile = path.join("workDir", "%s_affineremap.fits" % fName)
+                if path.exists(pathToFile):
+                    os.remove(pathToFile)
+                pathToFile = path.join("workDir", "%s.FIT" % fName)
+                if path.exists(pathToFile):
+                    os.remove(pathToFile)
+                if pathToFile in self.darkCleanImages:
+                    self.darkCleanImages.remove(pathToFile)
+
         # Create the list of images to be processed
         newRawImages = []
         for img in sorted(glob.glob(path.join(self.dirName, "%s%s%s*" % (self.objName, self.addString, self.filtName)))):
             if not img in self.rawImages:
                 newRawImages.append(img)
-        if len(newRawImages) == 0:
+        if (len(newRawImages) == 0) and (not imageWasRemoved):
             print "no new images"
             return
             
