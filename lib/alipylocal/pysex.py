@@ -46,8 +46,11 @@ def _get_cmd(img, img_ref, conf_args):
 
 
 def _read_cat(path = 'alipysex.cat'):
-    cat = asciidata.open(path)
-    return cat
+    if path.exists(path):
+        cat = asciidata.open(path)
+        return cat
+    else:
+        return None
 
 def _cleanup():
     files = [f for f in os.listdir('.') if 'alipysex.' in f]
