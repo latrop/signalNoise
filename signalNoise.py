@@ -209,8 +209,8 @@ class MainApplication(Tk.Frame):
             # self.graphPanel.plot_magnitude(self.magData)
 
         elif self.polarMode:
-            objSN, objPairSN, stSnList = get_photometry_polar_mode(self.seCatPolar, self.ref)
-            self.rightPanel.show_photometry_data_polar_mode(objSN, objPairSN, stSnList)
+            objSn, objPairSn, stSnList = get_photometry_polar_mode(self.seCatPolar, self.ref)
+            self.rightPanel.show_photometry_data_polar_mode(objSn, objPairSn, stSnList)
             # self.rightPanel.remove_objects_from_plot(upDateFigure=True)
 
         # Check if object sn ratio decreased (for example due to cloud)
