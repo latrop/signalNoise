@@ -81,7 +81,7 @@ class MainApplication(Tk.Frame):
         
 
     def check_out_files(self):
-        allFiles = glob.glob(path.join(self.dirName, "*"))
+        allFiles = glob.glob(path.join(self.dirName, "*.FIT"))
         lightFiles = []
         # get rid of dark files and subdirectories
         for f in allFiles:
