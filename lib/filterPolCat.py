@@ -9,10 +9,12 @@ def filterPolCat(catInName, catOutName, polarMode):
     matchDist = 3.0 
     polarMode = polarMode.lower()
     cat = np.genfromtxt(catInName)
-    if len(cat) == 0:
-        return None
     # Sort catalogue by x-coordinate
-    cat = cat[np.argsort(cat[:,1])]
+    try:
+        cat = cat[np.argsort(cat[:,1])]
+    except IndexError:
+        # empty cat
+        return None
     pairs = []
 
     for i, obj in enumerate(cat):
