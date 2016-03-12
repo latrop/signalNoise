@@ -13,7 +13,7 @@ PARAMETERS_NAME  lib/default.param  # name of the file containing catalog conten
  
 DETECT_TYPE      CCD            # CCD (linear) or PHOTO (with gamma correction)
 DETECT_MINAREA   4            # minimum number of pixels above threshold
-DETECT_THRESH    4            # <sigmas> or <threshold>,<ZP> in mag.arcsec-2
+DETECT_THRESH    2            # <sigmas> or <threshold>,<ZP> in mag.arcsec-2
 ANALYSIS_THRESH  2            # <sigmas> or <threshold>,<ZP> in mag.arcsec-2
  
 FILTER           Y              # apply filter for detection (Y or N)?
