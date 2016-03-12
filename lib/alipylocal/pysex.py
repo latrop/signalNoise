@@ -46,7 +46,7 @@ def _get_cmd(img, img_ref, conf_args):
 
 
 def _read_cat(path = 'alipysex.cat'):
-    if path.exists(path):
+    if os.path.exists(path):
         cat = asciidata.open(path)
         return cat
     else:
