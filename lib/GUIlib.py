@@ -1,6 +1,8 @@
 #! /usr/bin/env python
 
+import os
 from os import path
+import glob
 import Tkinter as Tk
 import tkFileDialog, tkMessageBox
 from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg, NavigationToolbar2TkAgg
@@ -37,8 +39,16 @@ class MenuBar(Tk.Frame):
     #     self.window.run_computation(dirPath, objName, filtName, addString)
 
     def select_folder(self):
+        # Find newest directory in telescopedata as an initial dir
+        if os.name == "nt":
+            pathToData = path.join("C:\\", "TelescopeData", "*")
+            listOfDirs = filter(path.isdir, glob.glob(pathToData))
+            initialdir  = max(listOfDirs, key=path.getctime)
+        else:
+            initialdir = None
         dirPath = tkFileDialog.askdirectory(parent=self.window.root,
-                                            title="Open data folder")
+                                            title="Open data folder",
+                                            initialdir=initialdir)
         dirPath = path.normpath(dirPath)
         self.window.setup(dirPath)
 
