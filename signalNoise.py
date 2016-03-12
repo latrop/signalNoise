@@ -97,32 +97,36 @@ class MainApplication(Tk.Frame):
         else:
             self.polarMode = False
 
+    def reset_new_filter(self):
+        self.rawImages = []
+        self.darkCleanImages = []
+        self.magData = []
+        self.currentFilter = self.filtName
+        self.objSn = 0
+        if len(self.badObjects) > 0:
+            self.rightPanel.update_bad_images_info([])
+            self.badObjects = []
+
+    def reset_new_object(self):
+        self.reset_new_filter()
+        self.currentObject = self.objName
+        self.ref = Reference(self.objName)
+
+        # Clear working directory
+        for f in glob.glob(path.join("workDir", "*")):
+            if (not "dark" in path.basename(f)) and (not "bias" in path.basename(f)):
+                os.remove(f)
 
     def run_computation(self):
         """ This is the main function. It is been
         called as soon as the object is selected."""
         if self.filtName != self.currentFilter:
             # new filter being processed
-            self.rawImages = []
-            self.darkCleanImages = []
-            self.magData = []
-            self.currentFilter = self.filtName
-            self.objSn = 0
-            self.badObjects = []
+            self.reset_new_filter()
 
         if self.objName != self.currentObject:
             # new object is being processed
-            self.rawImages = []
-            self.magData = []
-            self.darkCleanImages = []
-            self.currentObject = self.objName
-            self.ref = Reference(self.objName)
-            self.objSn = 0
-            self.badObjects = []
-            # Clear working directory
-            for f in glob.glob(path.join("workDir", "*")):
-                if (not "dark" in path.basename(f)) and (not "bias" in path.basename(f)):
-                    os.remove(f)
+            self.reset_new_object()
 
         # Observer can delete some raw files if they are bad,
         # so we need to check if there are files in rawImages list
