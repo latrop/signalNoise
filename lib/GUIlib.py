@@ -62,9 +62,9 @@ class ImagPanel(Tk.Frame):
         self.fig.axes.set_xticks([])
         self.fig.axes.set_yticks([])
         self.objPlotInstance = None
-        self.standartsPlotIntance = None
+        self.standartsPlotIntance = []
         self.objPairPlotInstance = None
-        self.standartsPairPlotInstance = None
+        self.standartsPairPlotInstance = []
 
         # self.toolbar = NavigationToolbar2TkAgg(self.canvas, self.window.root)
         # self.toolbar.update()
@@ -75,15 +75,17 @@ class ImagPanel(Tk.Frame):
         if self.objPlotInstance:
             self.objPlotInstance.remove()
             self.objPlotInstance = None
-        if self.standartsPlotIntance:
-            self.standartsPlotIntance.remove()
-            self.standartsPlotIntance = None
+        if len(self.standartsPlotIntance) > 0:
+            for plotInstance in self.standartsPlotIntance:
+                plotInstance.remove()
+            self.standartsPlotIntance = []
         if self.objPairPlotInstance:
             self.objPairPlotInstance.remove()
             self.objPairPlotInstance = None
-        if self.standartsPairPlotInstance:
-            self.standartsPairPlotInstance.remove()
-            self.standartsPairPlotInstance = None
+        if len(self.standartsPairPlotInstance) > 0:
+            for plotInstance in self.standartsPairPlotInstance:
+                plotInstance.remove()
+            self.standartsPairPlotInstance = []
         if upDateFigure:
             self.canvas.show()
 
@@ -102,26 +104,52 @@ class ImagPanel(Tk.Frame):
 
     def plot_objects(self, reference, polarMode=None):
         self.remove_objects_from_plot()
-        self.objPlotInstance = self.fig.plot([reference.objSEParams.xImage], [reference.objSEParams.yImage], marker="o",
-                                             markerfacecolor="none", markersize=15, markeredgewidth=2,
-                                             markeredgecolor="r")[0]
-        stx = [st['seParams'].xImage-1 for st in reference.standartsObs]
-        sty = [st['seParams'].yImage-1 for st in reference.standartsObs]
-        self.standartsPlotIntance =  self.fig.plot(stx, sty, marker="o", markerfacecolor="none",
-                                                   linestyle="", markersize=15, markeredgewidth=2,
-                                                   markeredgecolor="g")[0]
+        if not reference.objSEParams is None:
+            self.objPlotInstance = self.fig.plot([reference.objSEParams.xImage], [reference.objSEParams.yImage], marker="o",
+                                                 markerfacecolor="none", markersize=15, markeredgewidth=2,
+                                                 markeredgecolor="r")[0]
+        else:
+            self.objPlotInstance = self.fig.plot([reference.xObjObs], [reference.yObjObs], marker="o",
+                                                 markerfacecolor="none", markersize=15, markeredgewidth=2,
+                                                 markeredgecolor="0.75")[0]
+
+        for st in reference.standartsObs:
+            if st['seParams'] is None:
+                stx = st['xCen']-1
+                sty = st['yCen']-1
+                markColor = "0.75"
+            else:
+                stx = st['seParams'].xImage-1
+                sty = st['seParams'].yImage-1
+                markColor = "g"
+            self.standartsPlotIntance.append(self.fig.plot([stx], [sty], marker="o", markerfacecolor="none",
+                                                           linestyle="", markersize=15, markeredgewidth=2,
+                                                           markeredgecolor=markColor)[0])
 
         if polarMode:
-            self.objPairPlotInstance = self.fig.plot([reference.objPairSEParams.xImage],
-                                                     [reference.objPairSEParams.yImage],
-                                                     marker="o", markerfacecolor="none", markersize=15,
-                                                     markeredgewidth=2, markeredgecolor="r")[0]
-            stx = [st['seParams'].xImage-1 for st in reference.standartPairsObs]
-            sty = [st['seParams'].yImage-1 for st in reference.standartPairsObs]
-            self.standartsPairPlotInstance =  self.fig.plot(stx, sty, marker="o", markerfacecolor="none",
-                                                            linestyle="", markersize=15, markeredgewidth=2,
-                                                            markeredgecolor="g")[0]
+            if not reference.objPairSEParams is None:
+                self.objPairPlotInstance = self.fig.plot([reference.objPairSEParams.xImage],
+                                                         [reference.objPairSEParams.yImage],
+                                                         marker="o", markerfacecolor="none", markersize=15,
+                                                         markeredgewidth=2, markeredgecolor="r")[0]
+            else:
+                self.objPairPlotInstance = self.fig.plot([reference.xObjPairObs],
+                                                         [reference.yObjPairObs],
+                                                         marker="o", markerfacecolor="none", markersize=15,
+                                                         markeredgewidth=2, markeredgecolor="0.75")[0]
 
+            for st in reference.standartPairsObs:
+                if st['seParams'] is None:
+                    stx = st['xCen']-1
+                    sty = st['yCen']-1
+                    markColor = "0.75"
+                else:
+                    stx = st['seParams'].xImage-1
+                    sty = st['seParams'].yImage-1
+                    markColor = "g"
+                self.standartsPairPlotInstance.append(self.fig.plot([stx], [sty], marker="o", markerfacecolor="none",
+                                                                    linestyle="", markersize=15, markeredgewidth=2,
+                                                                    markeredgecolor="g")[0])
         self.canvas.show()
 
 
@@ -183,14 +211,43 @@ class RightPanel(Tk.Frame):
         self.messagesString.set("\n".join(["%s: %s" % (key, self.messages[key]) for key in self.messages if self.messages[key]]))
 
     def show_photometry_data(self, objSn, objMag, stSn):
-        string = "Mag: %1.2f\n" % (objMag)
-        string += "Obj S/N: %1.0f\n" % (objSn)
-        string += "\n".join(["%s S/N: %1.0f" % (st[0], st[1]) for st in stSn])
+        string = ""
+        if objMag is None:
+            string += "Mag: undef\n"
+        else:
+            string += "Mag: %1.2f\n" % (objMag)
+        if objSn is None:
+            string += "Obj S/N: undef\n"
+        else:
+            string += "Obj S/N: %1.0f\n" % (objSn)
+        for st in stSn:
+            if st[1] is None:
+                string += "%s S/N: undef\n" % (st[0])
+            else:
+                string += "%s S/N: %1.0f\n" % (st[0], st[1])
         self.photometryString.set(string)
 
     def show_photometry_data_polar_mode(self, objSN, objPairSN, stSnList):
-        string = "Obj S/N: %1.0f/%1.0f\n" % (objSN, objPairSN)
-        string += "\n".join(["%s S/N: %1.0f/%1.0f" % (st[0], st[1], st[2]) for st in stSnList])
+        string = "Obj S/N: "
+        if objSN is None:
+            string += "undef/"
+        else:
+            string += "%1.0f/" % (objSN)
+        if objPairSN is None:
+            string += "undef\n"
+        else:
+            string += "%1.0f\n" % (objPairSN)
+
+        for st in stSnList:
+            string += "%s S/N: " % (st[0])
+            if st[1] is None:
+                string += "undef/"
+            else:
+                string += "%1.0f/" % (st[1])
+            if st[2] is None:
+                string += "undef\n"
+            else:
+                string += "%1.0f\n" % (st[2])
         self.photometryString.set(string)
 
     def update_bad_images_info(self, badImagesList):

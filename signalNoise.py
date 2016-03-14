@@ -218,7 +218,7 @@ class MainApplication(Tk.Frame):
             # self.rightPanel.remove_objects_from_plot(upDateFigure=True)
 
         # Check if object sn ratio decreased (for example due to cloud)
-        if objSn < self.objSn:
+        if (not objSn is None) and (objSn < self.objSn):
             for f in newRawImages:
                 objName = path.splitext(path.basename(f))[0]
                 self.badObjects.append(objName)

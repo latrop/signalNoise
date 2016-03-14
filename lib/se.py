@@ -42,8 +42,12 @@ class SExCatalogue(object):
     
     def find_nearest(self, x, y):
         """ Returns nearest object to given coordinates"""
-        return min(self.objectList, key=lambda obj: hypot(x-obj.xImage, y-obj.yImage))
-
+        nearest = min(self.objectList, key=lambda obj: hypot(x-obj.xImage, y-obj.yImage))
+        dist = hypot(x-nearest.xImage, y-nearest.yImage)
+        if dist < 3.0:
+            return nearest
+        else:
+            return None
 
 
 def call_SE(fitsFile, catName=None, addString=None):
@@ -83,6 +87,9 @@ def get_photometry(cat, ref, filtName):
     fluxzpt = []
     stSn = []
     for st, stObs in zip(ref.standarts, ref.standartsObs):
+        if stObs["seParams"] is None:
+            stSn.append([st['name'], None])
+            continue
         flux = stObs["seParams"].fluxAuto
         fluxErr = stObs["seParams"].fluxAutoErr
         stSn.append([st['name'], abs(flux/fluxErr)])
@@ -90,8 +97,9 @@ def get_photometry(cat, ref, filtName):
             magzpt = 2.5*log10(flux) + st["mag%s"%filtName.lower()]
             fluxzpt.append(10**(0.4*(30.0-magzpt)))
 
-
     # find object magnitude and s/n ratio
+    if ref.objSEParams is None:
+        return None, None, stSn
     xCen = ref.objSEParams.xImage
     yCen = ref.objSEParams.yImage
     objPhotParams = cat.find_nearest(xCen, yCen)
@@ -110,28 +118,40 @@ def get_photometry(cat, ref, filtName):
 def get_photometry_polar_mode(cat, ref):
     # we are not going to compute any magnitudes in polar mode
     # 1) find sn ratios for object pair
-    xObjCen = ref.objSEParams.xImage
-    yObjCen = ref.objSEParams.yImage
-    objPhotParams = cat.find_nearest(xObjCen, yObjCen)
-    objFlux = objPhotParams.fluxAuto
-    objFluxErr = objPhotParams.fluxAutoErr
-    objSN = abs(objFlux / objFluxErr)
+    if not ref.objSEParams is None:
+        xObjCen = ref.objSEParams.xImage
+        yObjCen = ref.objSEParams.yImage
+        objPhotParams = cat.find_nearest(xObjCen, yObjCen)
+        objFlux = objPhotParams.fluxAuto
+        objFluxErr = objPhotParams.fluxAutoErr
+        objSN = abs(objFlux / objFluxErr)
+    else:
+        objSN = None
     # pair
-    xObjPairCen = ref.objPairSEParams.xImage
-    yObjPairCen = ref.objPairSEParams.yImage
-    objPairPhotParams = cat.find_nearest(xObjPairCen, yObjPairCen)
-    objPairFlux = objPairPhotParams.fluxAuto
-    objPairFluxErr = objPairPhotParams.fluxAutoErr
-    objPairSN = abs(objPairFlux / objPairFluxErr)
+    if not ref.objPairSEParams is None:
+        xObjPairCen = ref.objPairSEParams.xImage
+        yObjPairCen = ref.objPairSEParams.yImage
+        objPairPhotParams = cat.find_nearest(xObjPairCen, yObjPairCen)
+        objPairFlux = objPairPhotParams.fluxAuto
+        objPairFluxErr = objPairPhotParams.fluxAutoErr
+        objPairSN = abs(objPairFlux / objPairFluxErr)
+    else:
+        objPairSN = None
 
     # 2) find sn ratios for standart pairs
     stSnList = []
     for st, stPair in zip(ref.standartsObs, ref.standartPairsObs):
-        stFlux = st["seParams"].fluxAuto
-        stFluxErr = st["seParams"].fluxAutoErr
-        stSN = abs(stFlux/stFluxErr)
-        stPairFlux = stPair["seParams"].fluxAuto
-        stPairFluxErr = stPair["seParams"].fluxAutoErr
-        stPairSN = abs(stPairFlux/stPairFluxErr)
+        if not st["seParams"] is None:
+            stFlux = st["seParams"].fluxAuto
+            stFluxErr = st["seParams"].fluxAutoErr
+            stSN = abs(stFlux/stFluxErr)
+        else:
+            stSN = None
+        if not stPair["seParams"] is None:
+            stPairFlux = stPair["seParams"].fluxAuto
+            stPairFluxErr = stPair["seParams"].fluxAutoErr
+            stPairSN = abs(stPairFlux/stPairFluxErr)
+        else:
+            stPairSN = None
         stSnList.append((st["name"], stSN, stPairSN))
     return objSN, objPairSN, stSnList
