@@ -85,14 +85,14 @@ def clean_background():
 
 def get_photometry(cat, ref, filtName):
     fluxzpt = []
-    stSn = []
+    stSn = {}
     for st, stObs in zip(ref.standarts, ref.standartsObs):
         if stObs["seParams"] is None:
             stSn.append([st['name'], None])
             continue
         flux = stObs["seParams"].fluxAuto
         fluxErr = stObs["seParams"].fluxAutoErr
-        stSn.append([st['name'], abs(flux/fluxErr)])
+        stSn[st['name']] = abs(flux/fluxErr)
         if not st["mag%s"%filtName.lower()] is None:
             magzpt = 2.5*log10(flux) + st["mag%s"%filtName.lower()]
             fluxzpt.append(10**(0.4*(30.0-magzpt)))
@@ -139,7 +139,7 @@ def get_photometry_polar_mode(cat, ref):
         objPairSN = None
 
     # 2) find sn ratios for standart pairs
-    stSnList = []
+    stSnDict = {}
     for st, stPair in zip(ref.standartsObs, ref.standartPairsObs):
         if not st["seParams"] is None:
             stFlux = st["seParams"].fluxAuto
@@ -153,5 +153,13 @@ def get_photometry_polar_mode(cat, ref):
             stPairSN = abs(stPairFlux/stPairFluxErr)
         else:
             stPairSN = None
-        stSnList.append((st["name"], stSN, stPairSN))
-    return objSN, objPairSN, stSnList
+        stSnDict[st["name"]] = (stSN, stPairSN)
+    return objSN, objPairSN, stSnDict
+
+
+def st_sn_increased(stSnOld, stSnNew):
+    print stSnOld, stSnNew
+    for key in stSnOld:
+        if (key in stSnNew) and (np.sum(stSnOld[key]) > np.sum(stSnNew[key])):
+            return False
+    return True

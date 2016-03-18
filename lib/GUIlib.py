@@ -220,11 +220,12 @@ class RightPanel(Tk.Frame):
             string += "Obj S/N: undef\n"
         else:
             string += "Obj S/N: %1.0f\n" % (objSn)
-        for st in stSn:
-            if st[1] is None:
-                string += "%s S/N: undef\n" % (st[0])
+        for key in sorted(stSn):
+            value = stSn[key]
+            if value is None:
+                string += "%s S/N: undef\n" % (key)
             else:
-                string += "%s S/N: %1.0f\n" % (st[0], st[1])
+                string += "%s S/N: %1.0f\n" % (key, value)
         self.photometryString.set(string)
 
     def show_photometry_data_polar_mode(self, objSN, objPairSN, stSnList):
@@ -238,16 +239,17 @@ class RightPanel(Tk.Frame):
         else:
             string += "%1.0f\n" % (objPairSN)
 
-        for st in stSnList:
-            string += "%s S/N: " % (st[0])
-            if st[1] is None:
+        for key in sorted(stSnList):
+            values = stSnList[key]
+            string += "%s S/N: " % (key)
+            if values[0] is None:
                 string += "undef/"
             else:
-                string += "%1.0f/" % (st[1])
-            if st[2] is None:
+                string += "%1.0f/" % (values[0])
+            if values[1] is None:
                 string += "undef\n"
             else:
-                string += "%1.0f\n" % (st[2])
+                string += "%1.0f\n" % (values[1])
         self.photometryString.set(string)
 
     def update_bad_images_info(self, badImagesList):

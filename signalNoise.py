@@ -42,6 +42,7 @@ class MainApplication(Tk.Frame):
         self.rawImages = []
         self.magData = []
         self.objSn = 0
+        self.stSn = {}
         self.badObjects = []
         # cache flats
         self.flats = {}
@@ -103,6 +104,7 @@ class MainApplication(Tk.Frame):
         self.magData = []
         self.currentFilter = self.filtName
         self.objSn = 0
+        self.stSn = {}
         if len(self.badObjects) > 0:
             self.rightPanel.update_bad_images_info([])
             self.badObjects = []
@@ -213,36 +215,21 @@ class MainApplication(Tk.Frame):
             # self.graphPanel.plot_magnitude(self.magData)
 
         elif self.polarMode:
-            objSn, objPairSn, stSnList = get_photometry_polar_mode(self.seCatPolar, self.ref)
-            self.rightPanel.show_photometry_data_polar_mode(objSn, objPairSn, stSnList)
+            objSn, objPairSn, stSn = get_photometry_polar_mode(self.seCatPolar, self.ref)
+            self.rightPanel.show_photometry_data_polar_mode(objSn, objPairSn, stSn)
             # self.rightPanel.remove_objects_from_plot(upDateFigure=True)
 
         # Check if object sn ratio decreased (for example due to cloud)
-        if (not objSn is None) and (objSn < self.objSn):
+        if ((objSn is not None) and (objSn < self.objSn) and (not st_sn_increased(self.stSn, stSn))):
             for f in newRawImages:
                 objName = path.splitext(path.basename(f))[0]
                 self.badObjects.append(objName)
         self.objSn = objSn
+        self.stSn = stSn
         self.rightPanel.update_bad_images_info(self.badObjects)
 
         return
 
 
-[os.remove(f) for f in glob.glob("workDir/*.*")]
+[os.remove(f) for f in glob.glob(path.join("workDir", "*.*"))]
 MainApplication()
-
-
-
-
-#fix_for_bias_and_dark("./tmpdata/", glob.glob("./tmpdata/s50716*r0*"))
-
-
-#coadd_images(glob.glob("./tmpdata/s50716v0*"))
-
-# #clean_background()
-
-# ref = Reference("s50716")
-# tr = find_shift(ref.fitsFile, "./workDir/summed.fits")
-# print tr.v
-# print find_objects(ref, tr)
-
