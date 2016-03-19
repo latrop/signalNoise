@@ -93,7 +93,7 @@ class MainApplication(Tk.Frame):
         fNameWithoutPath = path.basename(newestFile)
         # Let's find what object is it
         self.objName, self.filtName, self.addString = parse_object_file_name(fNameWithoutPath)
-        if (not self.filtName is None) and (self.filtName.lower() in ("x", "y")):
+        if (self.filtName is not None) and (self.filtName.lower() in ("x", "y")):
             self.polarMode = True
         else:
             self.polarMode = False
@@ -212,15 +212,13 @@ class MainApplication(Tk.Frame):
             objSn, objMag, stSn = get_photometry(self.seCat, self.ref, self.filtName)
             self.rightPanel.show_photometry_data(objSn, objMag, stSn)
             self.magData.append((numOfCoaddedImages, objMag))
-            # self.graphPanel.plot_magnitude(self.magData)
 
         elif self.polarMode:
             objSn, objPairSn, stSn = get_photometry_polar_mode(self.seCatPolar, self.ref)
             self.rightPanel.show_photometry_data_polar_mode(objSn, objPairSn, stSn)
-            # self.rightPanel.remove_objects_from_plot(upDateFigure=True)
 
-        # Check if object sn ratio decreased (for example due to cloud)
-        if ((objSn is not None) and (objSn < self.objSn) and (not st_sn_increased(self.stSn, stSn))):
+        # Check if object sn ratio decreased (for example due to a cloud)
+        if ((objSn is not None) and (objSn < self.objSn) and (not st_sn_increased(self.stSn, stSn, self.polarMode))):
             for f in newRawImages:
                 objName = path.splitext(path.basename(f))[0]
                 self.badObjects.append(objName)

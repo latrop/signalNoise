@@ -1,6 +1,6 @@
 #! /usr/bin/env python
 
-from math import hypot, log10
+from math import hypot, log10, atan2, degrees, radians
 import subprocess
 from shutil import move
 import os
@@ -88,7 +88,7 @@ def get_photometry(cat, ref, filtName):
     stSn = {}
     for st, stObs in zip(ref.standarts, ref.standartsObs):
         if stObs["seParams"] is None:
-            stSn.append([st['name'], None])
+            stSn[st['name']] = None
             continue
         flux = stObs["seParams"].fluxAuto
         fluxErr = stObs["seParams"].fluxAutoErr
@@ -153,13 +153,28 @@ def get_photometry_polar_mode(cat, ref):
             stPairSN = abs(stPairFlux/stPairFluxErr)
         else:
             stPairSN = None
-        stSnDict[st["name"]] = (stSN, stPairSN)
+        stSnDict[st["name"]] = np.array([stSN, stPairSN])
     return objSN, objPairSN, stSnDict
 
 
-def st_sn_increased(stSnOld, stSnNew):
-    print stSnOld, stSnNew
-    for key in stSnOld:
-        if (key in stSnNew) and (np.sum(stSnOld[key]) > np.sum(stSnNew[key])):
-            return False
-    return True
+def st_sn_increased(stSnOld, stSnNew, polarMode):
+    if polarMode:
+        for key in stSnOld:
+            if (key in stSnNew):
+                a1 = stSnOld[key]
+                sOld = sum(a1[np.where(a1 != np.array(None))])
+                a2 = stSnNew[key]
+                sNew = sum(a2[np.where(a2 != np.array(None))])
+                if (sOld > sNew):
+                    return False
+            else:
+                print key, stSnOld, stSnNew
+        return True
+    else:
+        for key in stSnOld:
+            if (key in stSnNew):
+                sOld = stSnOld[key]
+                sNew = stSnNew[key]
+                if (sOld is not None) and (sNew is not None) and (sOld > sNew):
+                    return False
+        return True
