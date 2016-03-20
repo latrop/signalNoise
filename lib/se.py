@@ -118,6 +118,7 @@ def get_photometry(cat, ref, filtName):
 def get_photometry_polar_mode(cat, ref):
     # we are not going to compute any magnitudes in polar mode
     # 1) find sn ratios for object pair
+    fluxRatios = {}
     if not ref.objSEParams is None:
         xObjCen = ref.objSEParams.xImage
         yObjCen = ref.objSEParams.yImage
@@ -127,6 +128,7 @@ def get_photometry_polar_mode(cat, ref):
         objSN = abs(objFlux / objFluxErr)
     else:
         objSN = None
+        objFlux = None
     # pair
     if not ref.objPairSEParams is None:
         xObjPairCen = ref.objPairSEParams.xImage
@@ -137,9 +139,14 @@ def get_photometry_polar_mode(cat, ref):
         objPairSN = abs(objPairFlux / objPairFluxErr)
     else:
         objPairSN = None
-
+        objPairFlux = None
+    if (objFlux is not None) and (objPairFlux is not None):
+        fluxRatios["obj"] = objFlux / objPairFlux
+    else:
+        fluxRatios["obj"] = None
     # 2) find sn ratios for standart pairs
     stSnDict = {}
+    stFluxRatios = []
     for st, stPair in zip(ref.standartsObs, ref.standartPairsObs):
         if not st["seParams"] is None:
             stFlux = st["seParams"].fluxAuto
@@ -147,14 +154,22 @@ def get_photometry_polar_mode(cat, ref):
             stSN = abs(stFlux/stFluxErr)
         else:
             stSN = None
+            stFlux = None
         if not stPair["seParams"] is None:
             stPairFlux = stPair["seParams"].fluxAuto
             stPairFluxErr = stPair["seParams"].fluxAutoErr
             stPairSN = abs(stPairFlux/stPairFluxErr)
         else:
             stPairSN = None
+            stPairFlux = None
         stSnDict[st["name"]] = np.array([stSN, stPairSN])
-    return objSN, objPairSN, stSnDict
+        if (stFlux is not None) and (stPairFlux is not None):
+            stFluxRatios.append(stFlux/stPairFlux)
+    if stFluxRatios:
+        fluxRatios["st"] = np.mean(stFluxRatios)
+    else:
+        fluxRatios["st"] = None
+    return objSN, objPairSN, stSnDict, fluxRatios
 
 
 def st_sn_increased(stSnOld, stSnNew, polarMode):

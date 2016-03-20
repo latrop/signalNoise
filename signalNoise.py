@@ -214,8 +214,8 @@ class MainApplication(Tk.Frame):
             self.magData.append((numOfCoaddedImages, objMag))
 
         elif self.polarMode:
-            objSn, objPairSn, stSn = get_photometry_polar_mode(self.seCatPolar, self.ref)
-            self.rightPanel.show_photometry_data_polar_mode(objSn, objPairSn, stSn)
+            objSn, objPairSn, stSn, fluxRatios = get_photometry_polar_mode(self.seCatPolar, self.ref)
+            self.rightPanel.show_photometry_data_polar_mode(objSn, objPairSn, stSn, fluxRatios)
 
         # Check if object sn ratio decreased (for example due to a cloud)
         if ((objSn is not None) and (objSn < self.objSn) and (not st_sn_increased(self.stSn, stSn, self.polarMode))):

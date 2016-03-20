@@ -228,7 +228,7 @@ class RightPanel(Tk.Frame):
                 string += "%s S/N: %1.0f\n" % (key, value)
         self.photometryString.set(string)
 
-    def show_photometry_data_polar_mode(self, objSN, objPairSN, stSnList):
+    def show_photometry_data_polar_mode(self, objSN, objPairSN, stSnList, fluxRatios):
         string = "Obj S/N: "
         if objSN is None:
             string += "undef/"
@@ -250,6 +250,17 @@ class RightPanel(Tk.Frame):
                 string += "undef\n"
             else:
                 string += "%1.0f\n" % (values[1])
+        
+        string += "\n"
+        if fluxRatios["obj"] is not None:
+            string += "Obj FR: %1.3f\n" % fluxRatios["obj"]
+        else:
+            string += "Obj FR: Undef\n"
+        if fluxRatios["st"] is not None:
+            string += "St FR: %1.3f\n" % fluxRatios["st"]
+        else:
+            string += "St FR: undef\n"
+
         self.photometryString.set(string)
 
     def update_bad_images_info(self, badImagesList):
