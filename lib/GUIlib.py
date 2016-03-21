@@ -98,7 +98,7 @@ class ImagPanel(Tk.Frame):
         stdValue = np.std(data)
         self.fig.imshow(data, interpolation='nearest', cmap='gray',
                        vmin=meanValue, vmax=meanValue+2*stdValue)
-        self.fig.axis([0, xSize, 0, ySize])
+        self.fig.axis([0, xSize, ySize, 0])
         self.canvas.show()
         #self.canvas.get_tk_widget().pack(side=Tk.LEFT, fill=Tk.BOTH, expand=1)
 
