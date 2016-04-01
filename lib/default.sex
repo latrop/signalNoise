@@ -32,7 +32,7 @@ WEIGHT_TYPE      NONE
 
 #------------------------------ Photometry -----------------------------------
 PHOT_FLUXFRAC    0.25, 0.5, 0.75, 0.99	# 25%,50%,75%,99% OF THE TOTAL LUMINOSITY	 
-PHOT_APERTURES   5              # MAG_APER aperture diameter(s) in pixels
+PHOT_APERTURES   5,6              # MAG_APER aperture diameter(s) in pixels
 PHOT_AUTOPARAMS  2.5, 3.5       # MAG_AUTO parameters: <Kron_fact>,<min_radius>
 PHOT_PETROPARAMS 2.0, 3.5       # MAG_PETRO parameters: <Petrosian_fact>,
                                 # <min_radius>
@@ -51,7 +51,7 @@ STARNNW_NAME     lib/default.nnw    # Neural-Network_Weight table filename
  
 #------------------------------ Background -----------------------------------
  
-BACK_SIZE        100             # Background mesh: <size> or <width>,<height>
+BACK_SIZE        60             # Background mesh: <size> or <width>,<height>
 BACK_FILTERSIZE  3              # Background filter: <size> or <width>,<height>
  
 BACKPHOTO_TYPE   LOCAL         # can be GLOBAL or LOCAL

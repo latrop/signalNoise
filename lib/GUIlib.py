@@ -105,7 +105,7 @@ class ImagPanel(Tk.Frame):
     def plot_objects(self, reference, polarMode=None):
         self.remove_objects_from_plot()
         if not reference.objSEParams is None:
-            self.objPlotInstance = self.fig.plot([reference.objSEParams.xImage], [reference.objSEParams.yImage], marker="o",
+            self.objPlotInstance = self.fig.plot([reference.objSEParams["X_IMAGE"]], [reference.objSEParams["Y_IMAGE"]], marker="o",
                                                  markerfacecolor="none", markersize=15, markeredgewidth=2,
                                                  markeredgecolor="r")[0]
         else:
@@ -119,8 +119,8 @@ class ImagPanel(Tk.Frame):
                 sty = st['yCen']-1
                 markColor = "0.75"
             else:
-                stx = st['seParams'].xImage-1
-                sty = st['seParams'].yImage-1
+                stx = st['seParams']["X_IMAGE"]-1
+                sty = st['seParams']["Y_IMAGE"]-1
                 markColor = "g"
             self.standartsPlotIntance.append(self.fig.plot([stx], [sty], marker="o", markerfacecolor="none",
                                                            linestyle="", markersize=15, markeredgewidth=2,
@@ -128,8 +128,8 @@ class ImagPanel(Tk.Frame):
 
         if polarMode:
             if not reference.objPairSEParams is None:
-                self.objPairPlotInstance = self.fig.plot([reference.objPairSEParams.xImage],
-                                                         [reference.objPairSEParams.yImage],
+                self.objPairPlotInstance = self.fig.plot([reference.objPairSEParams["X_IMAGE"]],
+                                                         [reference.objPairSEParams["Y_IMAGE"]],
                                                          marker="o", markerfacecolor="none", markersize=15,
                                                          markeredgewidth=2, markeredgecolor="r")[0]
             else:
@@ -144,8 +144,8 @@ class ImagPanel(Tk.Frame):
                     sty = st['yCen']-1
                     markColor = "0.75"
                 else:
-                    stx = st['seParams'].xImage-1
-                    sty = st['seParams'].yImage-1
+                    stx = st['seParams']["X_IMAGE"]-1
+                    sty = st['seParams']["Y_IMAGE"]-1
                     markColor = "g"
                 self.standartsPairPlotInstance.append(self.fig.plot([stx], [sty], marker="o", markerfacecolor="none",
                                                                     linestyle="", markersize=15, markeredgewidth=2,

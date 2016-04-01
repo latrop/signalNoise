@@ -187,11 +187,35 @@ class MainApplication(Tk.Frame):
             filterPolCat(catNamePolar, catName, self.filtName)
             self.seCatPolar = SExCatalogue(catNamePolar)
             self.seCat = SExCatalogue(catName)
+
+            # Find median FWHM of the image
+            medianFWHM = self.seCat.get_median_value("FWHM_IMAGE")
+
+            # Now we want to run SExtractor once again to get fluxes in
+            # circular apertures of 1.55*FWHM and 1.55*sqrt(2)*FWHM radii
+            aper1 = 2*(1.55*medianFWHM+1)
+            aper2 = 1.41 * aper1
+            call_SE(backCleanFile, catNamePolar, addString="-PHOT_APERTURES %1.2f,%1.2f" % (aper1, aper2))
+            filterPolCat(catNamePolar, catName, self.filtName)
+            self.seCatPolar = SExCatalogue(catNamePolar)
+            self.seCat = SExCatalogue(catName)
+
             # Match objects from reference image on the observed one
             returnCode = self.ref.match_objects(backCleanFile, self.seCatPolar, self.filtName)
         else:
             call_SE(backCleanFile, catName)
             self.seCat = SExCatalogue(catName)
+
+            # Find median FWHM of the image
+            medianFWHM = self.seCat.get_median_value("FWHM_IMAGE")
+
+            # Now we want to run SExtractor once again to get fluxes in
+            # circular apertures of 1.55*FWHM and 1.55*sqrt(2)*FWHM radii
+            aper1 = 2*(1.55*medianFWHM+1)
+            aper2 = 1.41 * aper1
+            call_SE(backCleanFile, catName, addString="-PHOT_APERTURES %1.2f,%1.2f" % (aper1, aper2))
+            self.seCat = SExCatalogue(catName)
+
             # Match objects from reference image on the observed one
             returnCode = self.ref.match_objects(backCleanFile, self.seCat)
 
@@ -218,7 +242,7 @@ class MainApplication(Tk.Frame):
             self.rightPanel.show_photometry_data_polar_mode(objSn, objPairSn, stSn, fluxRatios)
 
         # Check if object sn ratio decreased (for example due to a cloud)
-        if ((objSn is not None) and (objSn < self.objSn) and (not st_sn_increased(self.stSn, stSn, self.polarMode))):
+        if ((objSn is not None) and (objSn < self.objSn)) and all_st_sn_decreased(self.stSn, stSn, self.polarMode):
             for f in newRawImages:
                 objName = path.splitext(path.basename(f))[0]
                 self.badObjects.append(objName)
