@@ -1,6 +1,6 @@
 #! /usr/bin/env python
 
-from math import hypot, log10, atan2, degrees, radians
+from math import hypot, log10, atan2, degrees, radians, pi
 import subprocess
 from shutil import move
 import os
@@ -70,16 +70,17 @@ def clean_background():
     origHDU = pyfits.open(path.join("workDir", "summed.fits"))
     origData = origHDU[0].data
     backHDU = pyfits.open(path.join("workDir", "background.fits"))
-    backData = backHDU[0].data
+    backData = backHDU[0].data.copy()
     cleanData = origData - backData
     cleanHDU = pyfits.PrimaryHDU(data=cleanData)
     pathToFile = path.join("workDir", "back_clean.fits")
     if path.exists(pathToFile):
         remove(pathToFile)
-    cleanHDU.writeto(pathToFile)    
+    cleanHDU.writeto(pathToFile)
+    return backData
 
 
-def get_photometry(cat, ref, filtName):
+def get_photometry(cat, ref, filtName, aperRadius, biasValue, darkValue, backData):
     fluxzpt = []
     stSn = {}
     for st, stObs in zip(ref.standarts, ref.standartsObs):
@@ -87,35 +88,38 @@ def get_photometry(cat, ref, filtName):
             stSn[st['name']] = None
             continue
         fluxAuto = stObs["seParams"]["FLUX_AUTO"]
-        fluxAper1 = stObs["seParams"]["FLUX_APER"][0]
-        fluxAper2 = stObs["seParams"]["FLUX_APER"][1]
-        fluxErr = abs(fluxAper2 - fluxAper1)
-        stSn[st['name']] = fluxAper1/(fluxAper1+fluxErr)**0.5
+        fluxAper1 = stObs["seParams"]["FLUX_APER"]
+        xCenSt = stObs["seParams"]["X_IMAGE"]
+        yCenSt = stObs["seParams"]["Y_IMAGE"]
+        pValue = pi*aperRadius**2*(backData[yCenSt, xCenSt] + darkValue + biasValue**2.0)
+        snValue = fluxAper1 / (fluxAper1+pValue)**0.5
+        stSn[st['name']] = snValue
         if not st["mag%s"%filtName.lower()] is None:
-            magzpt = 2.5*log10(fluxAuto) + st["mag%s"%filtName.lower()]
+            magzpt = 2.5*log10(fluxAper1) + st["mag%s"%filtName.lower()]
             fluxzpt.append(10**(0.4*(30.0-magzpt)))
 
     # find object magnitude and s/n ratio
     if ref.objSEParams is None:
-        return None, None, stSn
+        return None, None, None, stSn
     xCen = ref.objSEParams["X_IMAGE"]
     yCen = ref.objSEParams["Y_IMAGE"]
     objPhotParams = cat.find_nearest(xCen, yCen)
     objFluxAuto = objPhotParams["FLUX_AUTO"]
-    objFluxAper1 = objPhotParams["FLUX_APER"][0]
-    objFluxAper2 = objPhotParams["FLUX_APER"][1]
-    objFluxErr = abs(objFluxAper2 - objFluxAper1)
-    objSn = objFluxAper1/(objFluxAper1+objFluxErr)**0.5
+    objFluxAper1 = objPhotParams["FLUX_APER"]
+    pValue = pi*aperRadius**2*(backData[yCen, xCen] + darkValue + biasValue**2.0)
+    objSn = objFluxAper1 / (objFluxAper1+pValue)**0.5
     if not st["mag%s"%filtName.lower()] is None:
         meanZpt = 30 - 2.5*log10(np.mean(fluxzpt))
-        objMag = -2.5*log10(objFluxAuto)+meanZpt
+        objMag = -2.5*log10(objFluxAper1)+meanZpt
+        objMagSigma = 1.0857 / objSn
     else:
         objMag = -99.0
+        objMagSigma = -99.0
 
-    return objSn, objMag, stSn
+    return objSn, objMag, objMagSigma, stSn
 
 
-def get_photometry_polar_mode(cat, ref):
+def get_photometry_polar_mode(cat, ref, aperRadius, biasValue, darkValue, backData):
     # we are not going to compute any magnitudes in polar mode
     # 1) find sn ratios for object pair
     fluxRatios = {}
@@ -124,28 +128,28 @@ def get_photometry_polar_mode(cat, ref):
         yObjCen = ref.objSEParams["Y_IMAGE"]
         objPhotParams = cat.find_nearest(xObjCen, yObjCen)
         objFluxAuto = objPhotParams["FLUX_AUTO"]
-        objFluxAper1 = objPhotParams["FLUX_APER"][0]
-        objFluxAper2 = objPhotParams["FLUX_APER"][1]
-        objFluxErr = abs(objFluxAper2-objFluxAper1)
-        objSN = objFluxAper1 / (objFluxAper1+objFluxErr)**0.5
+        objFluxAper1 = objPhotParams["FLUX_APER"]
+        pValue = pi*aperRadius**2*(backData[yObjCen, xObjCen] + darkValue + biasValue**2.0)
+        objSN = objFluxAper1 / (objFluxAper1+pValue)**0.5
+
     else:
         objSN = None
-        objFluxAuto = None
+        objFluxAper1 = None
     # pair
     if not ref.objPairSEParams is None:
         xObjPairCen = ref.objPairSEParams["X_IMAGE"]
         yObjPairCen = ref.objPairSEParams["Y_IMAGE"]
         objPairPhotParams = cat.find_nearest(xObjPairCen, yObjPairCen)
         objPairFluxAuto = objPairPhotParams["FLUX_AUTO"]
-        objPairFluxAper1 = objPairPhotParams["FLUX_APER"][0]
-        objPairFluxAper2 = objPairPhotParams["FLUX_APER"][1]
-        objPairFluxErr = abs(objPairFluxAper2 - objPairFluxAper1)
-        objPairSN = objPairFluxAper1 / (objPairFluxAper1+objPairFluxErr)**0.5
+        objPairFluxAper1 = objPairPhotParams["FLUX_APER"]
+        pValue = pi*aperRadius**2*(backData[yObjPairCen, xObjPairCen] + darkValue + biasValue**2.0)
+        objPairSN = objPairFluxAper1 / (objPairFluxAper1+pValue)**0.5
+
     else:
         objPairSN = None
-        objPairFluxAuto = None
-    if (objFluxAuto is not None) and (objPairFluxAuto is not None):
-        fluxRatios["obj"] = objFluxAuto / objPairFluxAuto
+        objPairFluxAper1 = None
+    if (objFluxAper1 is not None) and (objPairFluxAper1 is not None):
+        fluxRatios["obj"] = objFluxAper1 / objPairFluxAper1
     else:
         fluxRatios["obj"] = None
     # 2) find sn ratios for standart pairs
@@ -154,25 +158,27 @@ def get_photometry_polar_mode(cat, ref):
     for st, stPair in zip(ref.standartsObs, ref.standartPairsObs):
         if not st["seParams"] is None:
             stFluxAuto = st["seParams"]["FLUX_AUTO"]
-            stFluxAper1 = st["seParams"]["FLUX_APER"][0]
-            stFluxAper2 = st["seParams"]["FLUX_APER"][1]
-            stFluxErr = abs(stFluxAper2 - stFluxAper1)
-            stSN = stFluxAper1/(stFluxAper1+stFluxErr)**0.5
+            stFluxAper1 = st["seParams"]["FLUX_APER"]
+            xCenSt = st["seParams"]["X_IMAGE"]
+            yCenSt = st["seParams"]["Y_IMAGE"]
+            pValue = pi*aperRadius**2*(backData[yCenSt, xCenSt] + darkValue + biasValue**2.0)
+            stSN = stFluxAper1/(stFluxAper1+pValue)**0.5
         else:
             stSN = None
-            stFluxAuto = None
+            stFluxAper1 = None
         if not stPair["seParams"] is None:
             stPairFluxAuto = stPair["seParams"]["FLUX_AUTO"]
-            stPairFluxAper1 = stPair["seParams"]["FLUX_APER"][0]
-            stPairFluxAper2 = stPair["seParams"]["FLUX_APER"][1]
-            stPairFluxErr = abs(stPairFluxAper2 - stPairFluxAper1)
-            stPairSN = stPairFluxAper1/(stPairFluxAper1+stPairFluxErr)**0.5
+            stPairFluxAper1 = stPair["seParams"]["FLUX_APER"]
+            xCenSt = st["seParams"]["X_IMAGE"]
+            yCenSt = st["seParams"]["Y_IMAGE"]
+            pValue = pi*aperRadius**2*(backData[yCenSt, xCenSt] + darkValue + biasValue**2.0)
+            stPairSN = stPairFluxAper1/(stPairFluxAper1+pValue)**0.5
         else:
             stPairSN = None
-            stPairFluxAuto = None
+            stPairFluxAper1 = None
         stSnDict[st["name"]] = np.array([stSN, stPairSN])
-        if (stFluxAuto is not None) and (stPairFluxAuto is not None):
-            stFluxRatios.append(stFluxAuto/stPairFluxAuto)
+        if (stFluxAper1 is not None) and (stPairFluxAper1 is not None):
+            stFluxRatios.append(stFluxAper1/stPairFluxAper1)
     if stFluxRatios:
         fluxRatios["st"] = np.mean(stFluxRatios)
     else:

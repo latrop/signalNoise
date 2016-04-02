@@ -48,9 +48,10 @@ def fix_for_bias_dark_and_flat(pathToDir, rawImages, flat):
         dataRaw = hduRaw[0].data
         headerRaw = hduRaw[0].header
         exptime = float(headerRaw['exptime'])
-        dataClr = (dataRaw/flat) - biasData - darkData * (exptime/60.0)
+        darkDataReduced = darkData * (exptime/60.0)
+        dataClr = (dataRaw/flat) - biasData - darkDataReduced
         outHDU = pyfits.PrimaryHDU(data=dataClr)
         outHDU.writeto(outName)
         hduRaw.close()
-    return outFileList
+    return outFileList, np.median(biasData), np.median(darkDataReduced)
 

@@ -44,6 +44,7 @@ class MainApplication(Tk.Frame):
         self.objSn = 0
         self.stSn = {}
         self.badObjects = []
+        self.biasValue, self.darkValue = 0.0, 0.0
         # cache flats
         self.flats = {}
         for filt in 'bvriXY':
@@ -163,8 +164,11 @@ class MainApplication(Tk.Frame):
         self.rawImages.extend(newRawImages)
 
         # Subtract bias and dark files
-        self.darkCleanImages.extend(fix_for_bias_dark_and_flat(self.dirName, newRawImages, self.flats[self.filtName.lower()]))
-        self.rightPanel.update_message("Bias and dark", "Ok")
+        if newRawImages:
+            newCleanImages, self.biasValue, self.darkValue = fix_for_bias_dark_and_flat(self.dirName, newRawImages,
+                                                                                        self.flats[self.filtName.lower()])
+            self.darkCleanImages.extend(newCleanImages)
+            self.rightPanel.update_message("Bias and dark", "Ok")
 
         # Coadd images
         if not self.polarMode:
@@ -174,7 +178,7 @@ class MainApplication(Tk.Frame):
         self.rightPanel.update_message("Images summed", "%i" % numOfCoaddedImages)
 
         # Subtract background
-        clean_background()
+        backData = clean_background()
         backCleanFile = path.join("workDir", "back_clean.fits")
         self.imagPanel.plot_fits_file(backCleanFile)
 
@@ -193,9 +197,8 @@ class MainApplication(Tk.Frame):
 
             # Now we want to run SExtractor once again to get fluxes in
             # circular apertures of 1.55*FWHM and 1.55*sqrt(2)*FWHM radii
-            aper1 = 2*(1.55*medianFWHM+1)
-            aper2 = 1.41 * aper1
-            call_SE(backCleanFile, catNamePolar, addString="-PHOT_APERTURES %1.2f,%1.2f" % (aper1, aper2))
+            aperRadius = 2*(1.55*medianFWHM+1)
+            call_SE(backCleanFile, catNamePolar, addString="-PHOT_APERTURES %1.2f" % (2*aperRadius))
             filterPolCat(catNamePolar, catName, self.filtName)
             self.seCatPolar = SExCatalogue(catNamePolar)
             self.seCat = SExCatalogue(catName)
@@ -211,9 +214,8 @@ class MainApplication(Tk.Frame):
 
             # Now we want to run SExtractor once again to get fluxes in
             # circular apertures of 1.55*FWHM and 1.55*sqrt(2)*FWHM radii
-            aper1 = 2*(1.55*medianFWHM+1)
-            aper2 = 1.41 * aper1
-            call_SE(backCleanFile, catName, addString="-PHOT_APERTURES %1.2f,%1.2f" % (aper1, aper2))
+            aperRadius = (1.55*medianFWHM+1)
+            call_SE(backCleanFile, catName, addString="-PHOT_APERTURES %1.2f" % (2*aperRadius))
             self.seCat = SExCatalogue(catName)
 
             # Match objects from reference image on the observed one
@@ -233,12 +235,14 @@ class MainApplication(Tk.Frame):
         # make aperture photometry of object and standarts
         snValues = {}
         if not self.polarMode:
-            objSn, objMag, stSn = get_photometry(self.seCat, self.ref, self.filtName)
-            self.rightPanel.show_photometry_data(objSn, objMag, stSn)
+            objSn, objMag, objMagSigma, stSn = get_photometry(self.seCat, self.ref, self.filtName, aperRadius,
+                                                              self.biasValue, self.darkValue, backData)
+            self.rightPanel.show_photometry_data(objSn, objMag, objMagSigma, stSn)
             self.magData.append((numOfCoaddedImages, objMag))
 
         elif self.polarMode:
-            objSn, objPairSn, stSn, fluxRatios = get_photometry_polar_mode(self.seCatPolar, self.ref)
+            objSn, objPairSn, stSn, fluxRatios = get_photometry_polar_mode(self.seCatPolar, self.ref, aperRadius,
+                                                                           self.biasValue, self.darkValue, backData)
             self.rightPanel.show_photometry_data_polar_mode(objSn, objPairSn, stSn, fluxRatios)
 
         # Check if object sn ratio decreased (for example due to a cloud)

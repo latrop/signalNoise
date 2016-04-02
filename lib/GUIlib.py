@@ -210,12 +210,12 @@ class RightPanel(Tk.Frame):
         self.messages[key] = msg
         self.messagesString.set("\n".join(["%s: %s" % (key, self.messages[key]) for key in self.messages if self.messages[key]]))
 
-    def show_photometry_data(self, objSn, objMag, stSn):
+    def show_photometry_data(self, objSn, objMag, objMagSigma, stSn):
         string = ""
         if objMag is None:
             string += "Mag: undef\n"
         else:
-            string += "Mag: %1.2f\n" % (objMag)
+            string += u"Mag: %1.2f \u00B1 %1.2f\n" % (objMag, objMagSigma)
         if objSn is None:
             string += "Obj S/N: undef\n"
         else:
