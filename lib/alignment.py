@@ -191,15 +191,18 @@ def coadd_images(imageList, polarMode):
         inds = numpy.where(hdu[0].data == 0.0)
         maskData[inds] = 0.0
         hdu.close()
+    # fix unoverlapped regions by setting median value there
+    data[numpy.where(maskData==0.0)] = numpy.median(data)
+    # save summed data to summed.fits file
     outHdu = pyfits.PrimaryHDU(data=data)
     pathToFile = path.join("workDir", "summed.fits")
     if path.exists(pathToFile):
         remove(pathToFile)
     outHdu.writeto(pathToFile)
-    maskHDU = pyfits.PrimaryHDU(data=maskData)
-    pathToFile = path.join("workDir", "bad_pixels.fits")
-    if path.exists(pathToFile):
-        remove(pathToFile)
-    maskHDU.writeto(pathToFile)
+    # maskHDU = pyfits.PrimaryHDU(data=maskData)
+    # pathToFile = path.join("workDir", "bad_pixels.fits")
+    # if path.exists(pathToFile):
+    #     remove(pathToFile)
+    # maskHDU.writeto(pathToFile)
     return len(imagesToCoadd)
 
