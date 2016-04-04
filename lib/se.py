@@ -64,19 +64,12 @@ def call_SE(fitsFile, catName=None, addString=None):
     print "done"
 
 
-def clean_background(addString):
+def find_background(addString):
     call_SE(path.join("workDir", "summed.fits"), addString=addString)
     move("background.fits", path.join("workDir", "background.fits"))
-    origHDU = pyfits.open(path.join("workDir", "summed.fits"))
-    origData = origHDU[0].data
     backHDU = pyfits.open(path.join("workDir", "background.fits"))
     backData = backHDU[0].data.copy()
-    cleanData = origData - backData
-    cleanHDU = pyfits.PrimaryHDU(data=cleanData)
-    pathToFile = path.join("workDir", "back_clean.fits")
-    if path.exists(pathToFile):
-        remove(pathToFile)
-    cleanHDU.writeto(pathToFile)
+    backHDU.close()
     return backData
 
 

@@ -11,7 +11,6 @@ import pyfits
 import numpy as np
 
 from lib.alignment import *
-from lib.se import clean_background
 
 
 class MenuBar(Tk.Frame):

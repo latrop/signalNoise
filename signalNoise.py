@@ -179,16 +179,16 @@ class MainApplication(Tk.Frame):
 
         # Subtract background
         print "Cleaining background"
-        backData = clean_background(addString = " -BACKPHOTO_TYPE %s " % (self.menubar.backTypeVar.get()))
-        backCleanFile = path.join("workDir", "back_clean.fits")
-        self.imagPanel.plot_fits_file(backCleanFile)
+        backData = find_background(addString = " -BACKPHOTO_TYPE %s " % (self.menubar.backTypeVar.get()))
+        summedFile = path.join("workDir", "summed.fits")
+        self.imagPanel.plot_fits_file(summedFile)
 
         # Create a catalogue of objects on summed images
         catName = path.join("workDir", "field.cat")
         if self.polarMode:
             # in polar mode we have two catalogues: polar and filtred one.
             catNamePolar = path.join("workDir", "field_polar.cat")
-            call_SE(backCleanFile, catNamePolar,
+            call_SE(summedFile, catNamePolar,
                     addString = "-BACKPHOTO_TYPE %s" % (self.menubar.backTypeVar.get()))
             filterPolCat(catNamePolar, catName, self.filtName)
             self.seCatPolar = SExCatalogue(catNamePolar)
@@ -202,15 +202,15 @@ class MainApplication(Tk.Frame):
             aperRadius = 2*(1.55*medianFWHM+1)
             addString = "-PHOT_APERTURES %1.2f " % (2*aperRadius)
             addString += "-BACKPHOTO_TYPE %s" % (self.menubar.backTypeVar.get())
-            call_SE(backCleanFile, catNamePolar, addString=addString)
+            call_SE(summedFile, catNamePolar, addString=addString)
             filterPolCat(catNamePolar, catName, self.filtName)
             self.seCatPolar = SExCatalogue(catNamePolar)
             self.seCat = SExCatalogue(catName)
 
             # Match objects from reference image on the observed one
-            returnCode = self.ref.match_objects(backCleanFile, self.seCatPolar, self.filtName)
+            returnCode = self.ref.match_objects(summedFile, self.seCatPolar, self.filtName)
         else:
-            call_SE(backCleanFile, catName,
+            call_SE(summedFile, catName,
                     addString="-BACKPHOTO_TYPE %s" % (self.menubar.backTypeVar.get()))
             self.seCat = SExCatalogue(catName)
 
@@ -222,11 +222,11 @@ class MainApplication(Tk.Frame):
             aperRadius = (1.55*medianFWHM+1)
             addString = "-PHOT_APERTURES %1.2f " % (2*aperRadius)
             addString += "-BACKPHOTO_TYPE %s" % (self.menubar.backTypeVar.get())
-            call_SE(backCleanFile, catName, addString=addString)
+            call_SE(summedFile, catName, addString=addString)
             self.seCat = SExCatalogue(catName)
 
             # Match objects from reference image on the observed one
-            returnCode = self.ref.match_objects(backCleanFile, self.seCat)
+            returnCode = self.ref.match_objects(summedFile, self.seCat)
 
         if returnCode:
             # matching failed. Maybe we need to coadd more_objects
