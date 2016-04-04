@@ -91,7 +91,7 @@ def get_photometry(cat, ref, filtName, aperRadius, biasValue, darkValue, backDat
         fluxAper1 = stObs["seParams"]["FLUX_APER"]
         xCenSt = stObs["seParams"]["X_IMAGE"]
         yCenSt = stObs["seParams"]["Y_IMAGE"]
-        pValue = pi*aperRadius**2*(backData[yCenSt, xCenSt] + darkValue + biasValue**2.0)
+        pValue = pi*aperRadius**2*(backData[int(yCenSt), int(xCenSt)] + darkValue + biasValue**2.0)
         snValue = fluxAper1 / (fluxAper1+pValue)**0.5
         stSn[st['name']] = snValue
         if not st["mag%s"%filtName.lower()] is None:
@@ -106,7 +106,7 @@ def get_photometry(cat, ref, filtName, aperRadius, biasValue, darkValue, backDat
     objPhotParams = cat.find_nearest(xCen, yCen)
     objFluxAuto = objPhotParams["FLUX_AUTO"]
     objFluxAper1 = objPhotParams["FLUX_APER"]
-    pValue = pi*aperRadius**2*(backData[yCen, xCen] + darkValue + biasValue**2.0)
+    pValue = pi*aperRadius**2*(backData[int(yCen), int(xCen)] + darkValue + biasValue**2.0)
     objSn = objFluxAper1 / (objFluxAper1+pValue)**0.5
     if not st["mag%s"%filtName.lower()] is None:
         meanZpt = 30 - 2.5*log10(np.mean(fluxzpt))
@@ -129,7 +129,7 @@ def get_photometry_polar_mode(cat, ref, aperRadius, biasValue, darkValue, backDa
         objPhotParams = cat.find_nearest(xObjCen, yObjCen)
         objFluxAuto = objPhotParams["FLUX_AUTO"]
         objFluxAper1 = objPhotParams["FLUX_APER"]
-        pValue = pi*aperRadius**2*(backData[yObjCen, xObjCen] + darkValue + biasValue**2.0)
+        pValue = pi*aperRadius**2*(backData[int(yObjCen), int(xObjCen)] + darkValue + biasValue**2.0)
         objSN = objFluxAper1 / (objFluxAper1+pValue)**0.5
 
     else:
@@ -142,7 +142,7 @@ def get_photometry_polar_mode(cat, ref, aperRadius, biasValue, darkValue, backDa
         objPairPhotParams = cat.find_nearest(xObjPairCen, yObjPairCen)
         objPairFluxAuto = objPairPhotParams["FLUX_AUTO"]
         objPairFluxAper1 = objPairPhotParams["FLUX_APER"]
-        pValue = pi*aperRadius**2*(backData[yObjPairCen, xObjPairCen] + darkValue + biasValue**2.0)
+        pValue = pi*aperRadius**2*(backData[int(yObjPairCen), int(xObjPairCen)] + darkValue + biasValue**2.0)
         objPairSN = objPairFluxAper1 / (objPairFluxAper1+pValue)**0.5
 
     else:
@@ -161,7 +161,7 @@ def get_photometry_polar_mode(cat, ref, aperRadius, biasValue, darkValue, backDa
             stFluxAper1 = st["seParams"]["FLUX_APER"]
             xCenSt = st["seParams"]["X_IMAGE"]
             yCenSt = st["seParams"]["Y_IMAGE"]
-            pValue = pi*aperRadius**2*(backData[yCenSt, xCenSt] + darkValue + biasValue**2.0)
+            pValue = pi*aperRadius**2*(backData[int(yCenSt), int(xCenSt)] + darkValue + biasValue**2.0)
             stSN = stFluxAper1/(stFluxAper1+pValue)**0.5
         else:
             stSN = None
@@ -171,7 +171,7 @@ def get_photometry_polar_mode(cat, ref, aperRadius, biasValue, darkValue, backDa
             stPairFluxAper1 = stPair["seParams"]["FLUX_APER"]
             xCenSt = st["seParams"]["X_IMAGE"]
             yCenSt = st["seParams"]["Y_IMAGE"]
-            pValue = pi*aperRadius**2*(backData[yCenSt, xCenSt] + darkValue + biasValue**2.0)
+            pValue = pi*aperRadius**2*(backData[int(yCenSt), int(xCenSt)] + darkValue + biasValue**2.0)
             stPairSN = stPairFluxAper1/(stPairFluxAper1+pValue)**0.5
         else:
             stPairSN = None

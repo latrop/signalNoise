@@ -187,7 +187,8 @@ class MainApplication(Tk.Frame):
         if self.polarMode:
             # in polar mode we have two catalogues: polar and filtred one.
             catNamePolar = path.join("workDir", "field_polar.cat")
-            call_SE(backCleanFile, catNamePolar)
+            call_SE(backCleanFile, catNamePolar,
+                    addString = "-BACKPHOTO_TYPE %s" % (self.menubar.backTypeVar.get()))
             filterPolCat(catNamePolar, catName, self.filtName)
             self.seCatPolar = SExCatalogue(catNamePolar)
             self.seCat = SExCatalogue(catName)
@@ -198,7 +199,9 @@ class MainApplication(Tk.Frame):
             # Now we want to run SExtractor once again to get fluxes in
             # circular apertures of 1.55*FWHM and 1.55*sqrt(2)*FWHM radii
             aperRadius = 2*(1.55*medianFWHM+1)
-            call_SE(backCleanFile, catNamePolar, addString="-PHOT_APERTURES %1.2f" % (2*aperRadius))
+            addString = "-PHOT_APERTURES %1.2f " % (2*aperRadius)
+            addString += "-BACKPHOTO_TYPE %s" % (self.menubar.backTypeVar.get())
+            call_SE(backCleanFile, catNamePolar, addString=addString)
             filterPolCat(catNamePolar, catName, self.filtName)
             self.seCatPolar = SExCatalogue(catNamePolar)
             self.seCat = SExCatalogue(catName)
@@ -206,7 +209,8 @@ class MainApplication(Tk.Frame):
             # Match objects from reference image on the observed one
             returnCode = self.ref.match_objects(backCleanFile, self.seCatPolar, self.filtName)
         else:
-            call_SE(backCleanFile, catName)
+            call_SE(backCleanFile, catName,
+                    addString="-BACKPHOTO_TYPE %s" % (self.menubar.backTypeVar.get()))
             self.seCat = SExCatalogue(catName)
 
             # Find median FWHM of the image
@@ -215,7 +219,9 @@ class MainApplication(Tk.Frame):
             # Now we want to run SExtractor once again to get fluxes in
             # circular apertures of 1.55*FWHM and 1.55*sqrt(2)*FWHM radii
             aperRadius = (1.55*medianFWHM+1)
-            call_SE(backCleanFile, catName, addString="-PHOT_APERTURES %1.2f" % (2*aperRadius))
+            addString = "-PHOT_APERTURES %1.2f " % (2*aperRadius)
+            addString += "-BACKPHOTO_TYPE %s" % (self.menubar.backTypeVar.get())
+            call_SE(backCleanFile, catName, addString=addString)
             self.seCat = SExCatalogue(catName)
 
             # Match objects from reference image on the observed one

@@ -22,6 +22,15 @@ class MenuBar(Tk.Frame):
         # self.fileMenu.add_command(label="Select object", command=self.select_object)
         self.fileMenu.add_command(label="Select folder", command=self.select_folder)
         self.menubar.add_cascade(label="File", menu=self.fileMenu)
+
+        # background type configuration
+        self.backMenu = Tk.Menu(self.menubar, tearoff=0)
+        self.backTypeVar = Tk.StringVar()
+        self.backTypeVar.set("GLOBAL")
+        self.backMenu.add_radiobutton(label="GLOBAL", variable=self.backTypeVar)
+        self.backMenu.add_radiobutton(label="LOCAL", variable=self.backTypeVar)
+        self.menubar.add_cascade(label="Background", menu=self.backMenu)
+
         self.menubar.add_command(label="Quit", command=self.window.on_closing)
         self.window.root.config(menu=self.menubar)
 
