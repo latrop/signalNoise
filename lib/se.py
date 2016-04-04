@@ -64,8 +64,8 @@ def call_SE(fitsFile, catName=None, addString=None):
     print "done"
 
 
-def clean_background():
-    call_SE(path.join("workDir", "summed.fits"))
+def clean_background(addString):
+    call_SE(path.join("workDir", "summed.fits"), addString=addString)
     move("background.fits", path.join("workDir", "background.fits"))
     origHDU = pyfits.open(path.join("workDir", "summed.fits"))
     origData = origHDU[0].data

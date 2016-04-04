@@ -178,7 +178,8 @@ class MainApplication(Tk.Frame):
         self.rightPanel.update_message("Images summed", "%i" % numOfCoaddedImages)
 
         # Subtract background
-        backData = clean_background()
+        print "Cleaining background"
+        backData = clean_background(addString = " -BACKPHOTO_TYPE %s " % (self.menubar.backTypeVar.get()))
         backCleanFile = path.join("workDir", "back_clean.fits")
         self.imagPanel.plot_fits_file(backCleanFile)
 

@@ -184,14 +184,22 @@ def coadd_images(imageList, polarMode):
 
     # Second step: coadd images    
     data = numpy.zeros((outputshape[1], outputshape[0]))
+    maskData = numpy.ones((outputshape[1], outputshape[0]), dtype=float)
     for img in imagesToCoadd:
         hdu = pyfits.open(img)
         data += hdu[0].data
+        inds = numpy.where(hdu[0].data == 0.0)
+        maskData[inds] = 0.0
         hdu.close()
     outHdu = pyfits.PrimaryHDU(data=data)
     pathToFile = path.join("workDir", "summed.fits")
     if path.exists(pathToFile):
         remove(pathToFile)
     outHdu.writeto(pathToFile)
+    maskHDU = pyfits.PrimaryHDU(data=maskData)
+    pathToFile = path.join("workDir", "bad_pixels.fits")
+    if path.exists(pathToFile):
+        remove(pathToFile)
+    maskHDU.writeto(pathToFile)
     return len(imagesToCoadd)
 

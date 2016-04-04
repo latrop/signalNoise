@@ -13,7 +13,7 @@ PARAMETERS_NAME  lib/default.param  # name of the file containing catalog conten
  
 DETECT_TYPE      CCD            # CCD (linear) or PHOTO (with gamma correction)
 DETECT_MINAREA   4            # minimum number of pixels above threshold
-DETECT_THRESH    3            # <sigmas> or <threshold>,<ZP> in mag.arcsec-2
+DETECT_THRESH    0.5            # <sigmas> or <threshold>,<ZP> in mag.arcsec-2
 ANALYSIS_THRESH  3            # <sigmas> or <threshold>,<ZP> in mag.arcsec-2
  
 FILTER           Y              # apply filter for detection (Y or N)?
@@ -28,7 +28,8 @@ CLEAN_PARAM      1.0            # Cleaning efficiency
 MASK_TYPE        CORRECT        # type of detection MASKing: can be one of
                                 # NONE, BLANK or CORRECT
 
-WEIGHT_TYPE      NONE
+WEIGHT_TYPE      MAP_WEIGHT
+WEIGHT_IMAGE     workDir/bad_pixels.fits
 
 #------------------------------ Photometry -----------------------------------
 PHOT_FLUXFRAC    0.25, 0.5, 0.75, 0.99	# 25%,50%,75%,99% OF THE TOTAL LUMINOSITY	 
@@ -54,7 +55,7 @@ STARNNW_NAME     lib/default.nnw    # Neural-Network_Weight table filename
 BACK_SIZE        50            # Background mesh: <size> or <width>,<height>
 BACK_FILTERSIZE  3              # Background filter: <size> or <width>,<height>
  
-BACKPHOTO_TYPE   LOCAL         # can be GLOBAL or LOCAL
+BACKPHOTO_TYPE   GLOBAL         # can be GLOBAL or LOCAL
 
 #------------------------------ Check Image ----------------------------------
  
