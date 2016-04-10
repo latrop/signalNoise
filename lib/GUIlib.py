@@ -113,11 +113,11 @@ class ImagPanel(Tk.Frame):
     def plot_objects(self, reference, polarMode=None):
         self.remove_objects_from_plot()
         if not reference.objSEParams is None:
-            self.objPlotInstance = self.fig.plot([reference.objSEParams["X_IMAGE"]], [reference.objSEParams["Y_IMAGE"]], marker="o",
-                                                 markerfacecolor="none", markersize=15, markeredgewidth=2,
+            self.objPlotInstance = self.fig.plot([reference.objSEParams["X_IMAGE"]-1], [reference.objSEParams["Y_IMAGE"]-1],
+                                                 marker="o", markerfacecolor="none", markersize=15, markeredgewidth=2,
                                                  markeredgecolor="r")[0]
         else:
-            self.objPlotInstance = self.fig.plot([reference.xObjObs], [reference.yObjObs], marker="o",
+            self.objPlotInstance = self.fig.plot([reference.xObjObs-1], [reference.yObjObs-1], marker="o",
                                                  markerfacecolor="none", markersize=15, markeredgewidth=2,
                                                  markeredgecolor="0.75")[0]
 
