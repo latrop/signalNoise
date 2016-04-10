@@ -183,6 +183,7 @@ class MainApplication(Tk.Frame):
                 if (os.name == "nt") and res:
                     for i in xrange(5):
                         winsound.Beep(400, 500)
+                self.rawImages = []  # Drop these bad files
                 return
             else:
                 self.rightPanel.update_message("Error", "")
