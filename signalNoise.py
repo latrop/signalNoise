@@ -177,11 +177,12 @@ class MainApplication(Tk.Frame):
             headerFiltName = header["FILTER"].lower().strip()
             if headerFiltName != self.filtName.lower():
                 # Filter missmatch alert
-                self.rightPanel.update_message("Error", "Filter mismatch!")
-                if os.name == "nt":
-                    for i in xrange(4):
+                res = self.rightPanel.update_message("Error", "Filter mismatch!")
+                # res is True if the error message is new, so we enter
+                # below if clause only one time every filter mismach event
+                if (os.name == "nt") and res:
+                    for i in xrange(5):
                         winsound.Beep(400, 500)
-                self.rawImages = []
                 return
             else:
                 self.rightPanel.update_message("Error", "")

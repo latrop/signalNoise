@@ -215,11 +215,15 @@ class RightPanel(Tk.Frame):
         self.objectInfoLabelValue.set(s)
 
     def update_message(self, key, msg):
+        if (key in self.messages) and (self.messages[key] == msg):
+            # nothing new
+            return False
         self.messages[key] = msg
         self.messagesString.set("\n"+"\n".join(["%s: %s" % (key, self.messages[key])
                                                 for key in self.messages if self.messages[key]]))
         if "Error" in self.messages:
             self.photometryString.set("")
+        return True
 
     def show_photometry_data(self, objSn, objMag, objMagSigma, stSn):
         string = ""
