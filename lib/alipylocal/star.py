@@ -208,7 +208,7 @@ def readmancat(mancatfilepath, verbose="True"):
 	return table
 
 
-def readsexcat(sexcat, hdu=0, verbose=True, maxflag = 3, posflux = True, minfwhm=2.0, propfields=[]):
+def readsexcat(sexcat, hdu=0, verbose=True, maxflag = 3, posflux = True, minfwhm=1.0, propfields=[]):
 	"""
 	sexcat is either a string (path to a file), or directly an asciidata catalog object as returned by pysex
 	
