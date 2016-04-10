@@ -136,13 +136,13 @@ class ImagPanel(Tk.Frame):
 
         if polarMode:
             if not reference.objPairSEParams is None:
-                self.objPairPlotInstance = self.fig.plot([reference.objPairSEParams["X_IMAGE"]],
-                                                         [reference.objPairSEParams["Y_IMAGE"]],
+                self.objPairPlotInstance = self.fig.plot([reference.objPairSEParams["X_IMAGE"]-1],
+                                                         [reference.objPairSEParams["Y_IMAGE"]-1],
                                                          marker="o", markerfacecolor="none", markersize=15,
                                                          markeredgewidth=2, markeredgecolor="r")[0]
             else:
-                self.objPairPlotInstance = self.fig.plot([reference.xObjPairObs],
-                                                         [reference.yObjPairObs],
+                self.objPairPlotInstance = self.fig.plot([reference.xObjPairObs-1],
+                                                         [reference.yObjPairObs-1],
                                                          marker="o", markerfacecolor="none", markersize=15,
                                                          markeredgewidth=2, markeredgecolor="0.75")[0]
 
