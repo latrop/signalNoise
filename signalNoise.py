@@ -9,6 +9,11 @@ import numpy as np
 
 import pylab
 
+import pyfits
+
+if os.name == "nt":
+    import winsound
+
 from lib.GUIlib import *
 from lib.reduction import *
 from lib.se import *
@@ -43,6 +48,7 @@ class MainApplication(Tk.Frame):
         self.magData = []
         self.objSn = 0
         self.stSn = {}
+        self.filterChecked = False
         self.badObjects = []
         self.biasValue, self.darkValue = 0.0, 0.0
         # cache flats
@@ -104,6 +110,7 @@ class MainApplication(Tk.Frame):
         self.darkCleanImages = []
         self.magData = []
         self.currentFilter = self.filtName
+        self.filterChecked = False
         self.objSn = 0
         self.stSn = {}
         if len(self.badObjects) > 0:
@@ -162,6 +169,24 @@ class MainApplication(Tk.Frame):
             return
             
         self.rawImages.extend(newRawImages)
+
+        # Check if filter name is equal to filter in file name
+        if not self.filterChecked:
+            hdu = pyfits.open(self.rawImages[0])
+            header = hdu[0].header
+            headerFiltName = header["FILTER"].lower().strip()
+            if headerFiltName != self.filtName.lower():
+                # Filter missmatch alert
+                self.rightPanel.update_message("Error", "Filter mismatch!")
+                if os.name == "nt":
+                    for i in xrange(4):
+                        winsound.Beep(400, 500)
+                self.rawImages = []
+                return
+            else:
+                self.rightPanel.update_message("Error", "")
+                self.filterChecked = True
+            hdu.close()
 
         # Subtract bias and dark files
         if newRawImages:

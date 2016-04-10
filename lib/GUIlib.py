@@ -216,7 +216,10 @@ class RightPanel(Tk.Frame):
 
     def update_message(self, key, msg):
         self.messages[key] = msg
-        self.messagesString.set("\n".join(["%s: %s" % (key, self.messages[key]) for key in self.messages if self.messages[key]]))
+        self.messagesString.set("\n"+"\n".join(["%s: %s" % (key, self.messages[key])
+                                                for key in self.messages if self.messages[key]]))
+        if "Error" in self.messages:
+            self.photometryString.set("")
 
     def show_photometry_data(self, objSn, objMag, objMagSigma, stSn):
         string = ""
