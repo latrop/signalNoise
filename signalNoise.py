@@ -106,11 +106,11 @@ class MainApplication(Tk.Frame):
         # Check if the frame number is equal to desired number of frames (set by alarm window)
         if self.frameNumber == (self.desiredExposures-1):
             # one frame to go: one beep
-            if (os.name == "nt") and res:
+            if (os.name == "nt"):
                 winsound.Beep(700, 500)
         if self.frameNumber == self.desiredExposures:
             # final exposure: two beeps
-            if (os.name == "nt") and res:
+            if (os.name == "nt"):
                 winsound.Beep(700, 500)
                 winsound.Beep(700, 500)
             self.desiredExposures = -1
