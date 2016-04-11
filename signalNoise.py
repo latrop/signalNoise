@@ -28,6 +28,7 @@ def parse_object_file_name(fName):
     # for example for wcom it may be 'wcom2b001.FIT'
     fNameNoExt = path.splitext(fName)[0]
     fNameNoNumbers = fNameNoExt[:-3]
+    frameNumber = int(fNameNoExt[-3:])
     filtName = fNameNoNumbers[-1]
     fNameNoFilt = fNameNoNumbers[:-1]
     # Let's find what object is it
@@ -35,9 +36,9 @@ def parse_object_file_name(fName):
         objName = line.strip()
         if fNameNoFilt.startswith(objName):
             addString = fNameNoFilt[len(objName):]
-            return objName, filtName, addString
+            return objName, filtName, addString, frameNumber
     # No sutable object found
-    return None, None, None
+    return None, None, None, None
 
 
 class MainApplication(Tk.Frame):
@@ -49,6 +50,7 @@ class MainApplication(Tk.Frame):
         self.objSn = 0
         self.stSn = {}
         self.filterChecked = False
+        self.desiredExposures = -1
         self.badObjects = []
         self.biasValue, self.darkValue = 0.0, 0.0
         # cache flats
@@ -99,7 +101,21 @@ class MainApplication(Tk.Frame):
         newestFile = max(lightFiles, key=path.getctime)
         fNameWithoutPath = path.basename(newestFile)
         # Let's find what object is it
-        self.objName, self.filtName, self.addString = parse_object_file_name(fNameWithoutPath)
+        self.objName, self.filtName, self.addString, self.frameNumber = parse_object_file_name(fNameWithoutPath)
+
+        # Check if the frame number is equal to desired number of frames (set by alarm window)
+        if self.frameNumber == (self.desiredExposures-1):
+            # one frame to go: one beep
+            if (os.name == "nt"):
+                winsound.Beep(700, 500)
+        if self.frameNumber == self.desiredExposures:
+            # final exposure: two beeps
+            if (os.name == "nt"):
+                winsound.Beep(700, 500)
+                winsound.Beep(700, 500)
+            self.desiredExposures = -1
+
+        # Determine if exposure is in polar mode
         if (self.filtName is not None) and (self.filtName.lower() in ("x", "y")):
             self.polarMode = True
         else:
@@ -203,6 +219,7 @@ class MainApplication(Tk.Frame):
         else:
             numOfCoaddedImages = coadd_images(self.darkCleanImages, self.filtName)
         self.rightPanel.update_message("Images summed", "%i" % numOfCoaddedImages)
+
 
         # Subtract background
         print "Cleaining background"
