@@ -163,7 +163,8 @@ def coadd_images(imageList, polarMode):
     # Shifting should be done only if there is new images:
     if len(imagesToAlign) > 0:
         print ("%s" % str(polarMode)) * 10
-        identifications = alipy.ident.run(refImage, imagesToAlign, visu=False, verbose=True, r=10.0, polarMode=polarMode, refpolar=True)
+        identifications = alipy.ident.run(refImage, imagesToAlign, visu=False, verbose=True, r=10.0,
+                                          polarMode=polarMode, refpolar=True)
         for ident in identifications:
             if ident.ok is True:
                 # if alignment is ok, then transform image
@@ -178,7 +179,7 @@ def coadd_images(imageList, polarMode):
                 print "not ok: %s" % (path.basename(ident.ukn.filepath))
 
     # refImage image was not remapped, since all other images was remapped
-    # to match it, but we want to coadd in as well:
+    # to match it, but we want to coadd it as well:
     imagesToCoadd.append(refImage)
 
 
@@ -199,10 +200,5 @@ def coadd_images(imageList, polarMode):
     if path.exists(pathToFile):
         remove(pathToFile)
     outHdu.writeto(pathToFile)
-    # maskHDU = pyfits.PrimaryHDU(data=maskData)
-    # pathToFile = path.join("workDir", "bad_pixels.fits")
-    # if path.exists(pathToFile):
-    #     remove(pathToFile)
-    # maskHDU.writeto(pathToFile)
     return len(imagesToCoadd)
 
