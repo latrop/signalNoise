@@ -297,12 +297,14 @@ class AlarmPopup(Tk.Frame):
         self.window = window
         self.top = Tk.Toplevel(window.root)
         self.top.geometry('+%i+%i' % (window.root.winfo_x()+30, window.root.winfo_y()+30)) 
-        Tk.Label(self.top, text="Exposures").pack()
-        self.entry = Tk.Entry(self.top)
-        self.entry.insert(0, "0")
-        self.entry.pack(padx=5)
+        Tk.Label(self.top, text="Exposures").grid(column=0, row=0, padx=5, pady=5)
+        self.entry = Tk.Entry(self.top, width=5)
+        self.entry.insert(0, str(abs(window.desiredExposures)))
+        self.entry.grid(column=1, row=0, padx=5, pady=5)
         self.button = Tk.Button(self.top, text="OK", command=self.ok)
-        self.button.pack(pady=5)
+        self.button.grid(column=0, row=1, padx=5, pady=5)
+        self.cancelButton = Tk.Button(self.top, text="Cancel", command=self.top.destroy)
+        self.cancelButton.grid(column=1, row=1, padx=5, pady=5)
     
     def ok(self):
         self.window.desiredExposures = int(self.entry.get())
