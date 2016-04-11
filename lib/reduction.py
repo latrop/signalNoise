@@ -5,31 +5,36 @@ import os
 from os import path
 import numpy as np
 import pyfits
-import time
 
 def make_master_dark(pathToDir): # TODO What if no dark files found?
     """ Creates median of three newest darks in
     given directory"""
-    allDarks = glob.glob(path.join(pathToDir, "dark*.FIT"))
-    lastDarks = sorted(allDarks, key=path.getctime)[-3:]
-    masterDarkData = np.median([pyfits.open(fName)[0].data for fName in lastDarks], axis=0)
-    masterDarkHDU =pyfits.PrimaryHDU(data = masterDarkData)
     outPath = path.join("workDir", "master_dark.fits")
-    if path.exists(outPath):
-        os.remove(outPath)
-    masterDarkHDU.writeto(outPath)
+    if not path.exists(outPath):
+        allDarks = glob.glob(path.join(pathToDir, "dark*.FIT"))
+        lastDarks = sorted(allDarks, key=path.getctime)[-3:]
+        masterDarkData = np.median([pyfits.open(fName)[0].data for fName in lastDarks], axis=0)
+        masterDarkHDU =pyfits.PrimaryHDU(data = masterDarkData)
+        if path.exists(outPath):
+            os.remove(outPath)
+        masterDarkHDU.writeto(outPath)
+    else:
+        masterDarkData = pyfits.open(outPath)[0].data.copy()
     return masterDarkData
 
 
 def make_master_bias(pathToDir): # the same quesion
     """ Creates median of all bias files in the given directory"""
-    allBiases = glob.glob(path.join(pathToDir, "bias*.FIT"))
-    masterBiasData = np.median([pyfits.open(fName)[0].data for fName in allBiases], axis=0)
-    masterBiasHDU =pyfits.PrimaryHDU(data = masterBiasData)
     outPath = path.join("workDir", "master_bias.fits")
-    if path.exists(outPath):
-        os.remove(outPath)
-    masterBiasHDU.writeto(outPath)
+    if not path.exists(outPath):
+        allBiases = glob.glob(path.join(pathToDir, "bias*.FIT"))
+        masterBiasData = np.median([pyfits.open(fName)[0].data for fName in allBiases], axis=0)
+        masterBiasHDU =pyfits.PrimaryHDU(data = masterBiasData)
+        if path.exists(outPath):
+            os.remove(outPath)
+        masterBiasHDU.writeto(outPath)
+    else:
+        masterBiasData = pyfits.open(outPath)[0].data.copy()
     return masterBiasData
 
 

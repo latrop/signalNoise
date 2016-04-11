@@ -1,5 +1,6 @@
 #! /usr/bin/env python
 
+import time
 import glob
 import sys
 import os
@@ -50,7 +51,7 @@ class MainApplication(Tk.Frame):
         self.objSn = 0
         self.stSn = {}
         self.filterChecked = False
-        self.desiredExposures = -1
+        self.desiredExposures = 0
         self.badObjects = []
         self.biasValue, self.darkValue = 0.0, 0.0
         # cache flats
@@ -102,18 +103,6 @@ class MainApplication(Tk.Frame):
         fNameWithoutPath = path.basename(newestFile)
         # Let's find what object is it
         self.objName, self.filtName, self.addString, self.frameNumber = parse_object_file_name(fNameWithoutPath)
-
-        # Check if the frame number is equal to desired number of frames (set by alarm window)
-        if self.frameNumber == (self.desiredExposures-1):
-            # one frame to go: one beep
-            if (os.name == "nt"):
-                winsound.Beep(700, 500)
-        if self.frameNumber == self.desiredExposures:
-            # final exposure: two beeps
-            if (os.name == "nt"):
-                winsound.Beep(700, 500)
-                winsound.Beep(700, 500)
-            self.desiredExposures = -1
 
         # Determine if exposure is in polar mode
         if (self.filtName is not None) and (self.filtName.lower() in ("x", "y")):
@@ -183,7 +172,6 @@ class MainApplication(Tk.Frame):
         if (len(newRawImages) == 0) and (not imageWasRemoved):
             print "no new images"
             return
-            
         self.rawImages.extend(newRawImages)
 
         # Check if filter name is equal to filter in file name
@@ -205,6 +193,18 @@ class MainApplication(Tk.Frame):
                 self.rightPanel.update_message("Error", "")
                 self.filterChecked = True
             hdu.close()
+
+        # Check if the frame number is equal to desired number of frames (set by alarm window)
+        if self.frameNumber == (self.desiredExposures-1):
+            # one frame to go: one beep
+            if (os.name == "nt"):
+                winsound.Beep(700, 500)
+        if self.frameNumber == self.desiredExposures:
+            # final exposure: two beeps
+            if (os.name == "nt"):
+                winsound.Beep(700, 500)
+                winsound.Beep(700, 500)
+            self.desiredExposures *= -1
 
         # Subtract bias and dark files
         if newRawImages:
