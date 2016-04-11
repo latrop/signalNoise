@@ -30,6 +30,8 @@ class MenuBar(Tk.Frame):
         self.backMenu.add_radiobutton(label="LOCAL", variable=self.backTypeVar)
         self.menubar.add_cascade(label="Background", menu=self.backMenu)
 
+        self.menubar.add_command(label="Alarm", command=self.set_alarm)
+
         self.menubar.add_command(label="Quit", command=self.window.on_closing)
         self.window.root.config(menu=self.menubar)
 
@@ -60,6 +62,8 @@ class MenuBar(Tk.Frame):
         dirPath = path.normpath(dirPath)
         self.window.setup(dirPath)
 
+    def set_alarm(self):
+        popup = AlarmPopup(self.window)
 
 class ImagPanel(Tk.Frame):
     def __init__(self, window):
@@ -288,3 +292,18 @@ class RightPanel(Tk.Frame):
         
 
 
+class AlarmPopup(Tk.Frame):
+    def __init__(self, window):
+        self.window = window
+        self.top = Tk.Toplevel(window.root)
+        self.top.geometry('+%i+%i' % (window.root.winfo_x()+30, window.root.winfo_y()+30)) 
+        Tk.Label(self.top, text="Exposures").pack()
+        self.entry = Tk.Entry(self.top)
+        self.entry.insert(0, "0")
+        self.entry.pack(padx=5)
+        self.button = Tk.Button(self.top, text="OK", command=self.ok)
+        self.button.pack(pady=5)
+    
+    def ok(self):
+        self.window.desiredExposures = int(self.entry.get())
+        self.top.destroy()
