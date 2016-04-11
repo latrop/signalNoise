@@ -179,6 +179,7 @@ class MainApplication(Tk.Frame):
             hdu = pyfits.open(self.rawImages[0])
             header = hdu[0].header
             headerFiltName = header["FILTER"].lower().strip()
+            hdu.close()
             if headerFiltName != self.filtName.lower():
                 # Filter missmatch alert
                 res = self.rightPanel.update_message("Error", "Filter mismatch!")
@@ -192,7 +193,6 @@ class MainApplication(Tk.Frame):
             else:
                 self.rightPanel.update_message("Error", "")
                 self.filterChecked = True
-            hdu.close()
 
         # Check if the frame number is equal to desired number of frames (set by alarm window)
         if self.frameNumber == (self.desiredExposures-1):
