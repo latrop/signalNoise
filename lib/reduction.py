@@ -4,6 +4,7 @@ import glob
 import os
 from os import path
 import numpy as np
+import time
 import pyfits
 
 def make_master_dark(pathToDir): # TODO What if no dark files found?
@@ -46,11 +47,24 @@ def fix_for_bias_dark_and_flat(pathToDir, rawImages, flat):
     for pathToFile in rawImages:
         fName = path.basename(pathToFile)
         outName = path.join("workDir", fName)
-        outFileList.append(outName)
         if path.exists(outName):
             continue
-        hduRaw = pyfits.open(pathToFile)
-        dataRaw = hduRaw[0].data
+        for i in xrange(25):
+            # Occasionally we can try to read data from the file
+            # that is being written at the moment by CCDops.
+            # In this case we will get IOError and we have to
+            # wait for writing of the file to be finished
+            try:
+                hduRaw = pyfits.open(pathToFile)
+                break
+            except IOError:
+                print "Got troubles while reading %s" % (pathToFile)
+                time.sleep(0.1)
+                continue
+        else:
+            # We didn't manage to read this file and we give up
+            continue
+        dataRaw = hduRaw[0].data.copy()
         headerRaw = hduRaw[0].header
         exptime = float(headerRaw['exptime'])
         darkDataReduced = darkData * (exptime/60.0)
@@ -58,5 +72,9 @@ def fix_for_bias_dark_and_flat(pathToDir, rawImages, flat):
         outHDU = pyfits.PrimaryHDU(data=dataClr)
         outHDU.writeto(outName)
         hduRaw.close()
-    return outFileList, np.median(biasData), np.median(darkDataReduced)
+        outFileList.append(outName)
+    if outFileList:
+        return outFileList, np.median(biasData), np.median(darkDataReduced)
+    else:
+        return [], None, None
 
