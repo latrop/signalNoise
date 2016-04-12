@@ -210,6 +210,8 @@ class MainApplication(Tk.Frame):
         if newRawImages:
             newCleanImages, self.biasValue, self.darkValue = fix_for_bias_dark_and_flat(self.dirName, newRawImages,
                                                                                         self.flats[self.filtName.lower()])
+            if not newCleanImages:
+                return
             self.darkCleanImages.extend(newCleanImages)
             self.rightPanel.update_message("Bias and dark", "Ok")
 
