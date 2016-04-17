@@ -81,15 +81,14 @@ class MainApplication(Tk.Frame):
         self.cycle()
 
     def cycle(self):
-        self.check_out_files()
-        if not self.objName is None:
-            self.rightPanel.update_object_info(self.objName, self.filtName, self.addString)
-            self.run_computation()
-        else:
-            self.rightPanel.update_object_info("---", "---", "---")
-            self.rightPanel.photometryString.set("")
-        self.root.after(1500, self.cycle)
-        
+            self.check_out_files()
+            if not self.objName is None:
+                self.rightPanel.update_object_info(self.objName, self.filtName, self.addString)
+                self.run_computation()
+            else:
+                self.rightPanel.update_object_info("---", "---", "---")
+                self.rightPanel.photometryString.set("")
+            self.root.after(1500, self.cycle)        
 
     def check_out_files(self):
         allFiles = glob.glob(path.join(self.dirName, "*.FIT"))
