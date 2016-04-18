@@ -88,8 +88,7 @@ class MainApplication(Tk.Frame):
         else:
             self.rightPanel.update_object_info("---", "---", "---")
             self.rightPanel.photometryString.set("")
-        self.root.after(1500, self.cycle)
-        
+        self.root.after(1500, self.cycle)        
 
     def check_out_files(self):
         allFiles = glob.glob(path.join(self.dirName, "*.FIT"))

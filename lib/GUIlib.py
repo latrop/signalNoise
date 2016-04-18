@@ -73,6 +73,7 @@ class ImagPanel(Tk.Frame):
         self.fig = self.mainGraph.add_subplot(111)
         self.fig.axes.set_xticks([])
         self.fig.axes.set_yticks([])
+        self.fitsPlotInstance = None
         self.objPlotInstance = None
         self.standartsPlotIntance = []
         self.objPairPlotInstance = None
@@ -102,14 +103,18 @@ class ImagPanel(Tk.Frame):
             self.canvas.show()
 
     def plot_fits_file(self, fitsName):
+        if self.fitsPlotInstance:
+            # remove previous plot if exists
+            self.fitsPlotInstance.remove()
+            self.fitsPlotInstance = None
         hdu = pyfits.open(fitsName)
         data = hdu[0].data.copy()
         hdu.close()
         ySize, xSize = data.shape
         meanValue = np.mean(data)
         stdValue = np.std(data)
-        self.fig.imshow(data, interpolation='nearest', cmap='gray',
-                       vmin=meanValue, vmax=meanValue+2*stdValue)
+        self.fitsPlotInstance = self.fig.imshow(data, interpolation='nearest', cmap='gray',
+                                                vmin=meanValue, vmax=meanValue+2*stdValue)
         self.fig.axis([0, xSize, ySize, 0])
         self.canvas.show()
         #self.canvas.get_tk_widget().pack(side=Tk.LEFT, fill=Tk.BOTH, expand=1)
