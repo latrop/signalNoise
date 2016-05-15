@@ -39,6 +39,21 @@ def make_master_bias(pathToDir): # the same quesion
     return masterBiasData
 
 
+def safe_open_fits(pathToFile):
+    """Occasionally we can try to read data from the file
+        that is being written at the moment by CCDops.
+        In this case we will get IOError and we have to
+        wait for writing of the file to be finished"""
+    for i in xrange(25):
+        try:
+            hdu = pyfits.open(pathToFile)
+            return hdu
+        except IOError:
+            print "Got troubles while reading %s" % (pathToFile)
+            time.sleep(0.1)
+    print "Could not open file in 25 attempts"
+
+
 def fix_for_bias_dark_and_flat(pathToDir, rawImages, flat):
     """ Function subtracts biases and darks from raw file """
     biasData = make_master_bias(pathToDir)
@@ -49,21 +64,7 @@ def fix_for_bias_dark_and_flat(pathToDir, rawImages, flat):
         outName = path.join("workDir", fName)
         if path.exists(outName):
             continue
-        for i in xrange(25):
-            # Occasionally we can try to read data from the file
-            # that is being written at the moment by CCDops.
-            # In this case we will get IOError and we have to
-            # wait for writing of the file to be finished
-            try:
-                hduRaw = pyfits.open(pathToFile)
-                break
-            except IOError:
-                print "Got troubles while reading %s" % (pathToFile)
-                time.sleep(0.1)
-                continue
-        else:
-            # We didn't manage to read this file and we give up
-            continue
+        hduRaw = safe_open_fits(pathToFile)
         dataRaw = hduRaw[0].data.copy()
         headerRaw = hduRaw[0].header
         exptime = float(headerRaw['exptime'])
