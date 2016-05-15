@@ -175,7 +175,7 @@ class MainApplication(Tk.Frame):
 
         # Check if filter name is equal to filter in file name
         if not self.filterChecked:
-            hdu = pyfits.open(self.rawImages[0])
+            hdu = safe_open_fits(self.rawImages[0])
             header = hdu[0].header
             headerFiltName = header["FILTER"].lower().strip()
             hdu.close()
