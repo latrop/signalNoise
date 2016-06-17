@@ -92,14 +92,15 @@ class Reference(object):
             print "not ok"
             self.transform = None
 
-    def match_objects(self, observedImage, catalogue, polarMode=None):
+    def match_objects(self, observedImage, catalogue, polarMode=None, matchOnly=False):
         # Let's find where on the observed image objects should
         # be according to reference image using affine transform
-        self.find_shift(observedImage, polarMode=polarMode)
-        if self.transform is None:
-            # No transform found
-            return 1
-        self.apply_transform()
+        if not matchOnly:
+            self.find_shift(observedImage, polarMode=polarMode)
+            if self.transform is None:
+                # No transform found
+                return 1
+            self.apply_transform()
 
         # Now we need to find for objects their sextractor-generated parameters
         self.objSEParams = catalogue.find_nearest(self.xObjObs, self.yObjObs)
@@ -138,6 +139,12 @@ class Reference(object):
                 self.standartPairsObs.append({"name": "%s_b" % (st['name']),
                                               "xCen": x, "yCen": y})
 
+    def get_standatds_fwhm(self):
+        fwhms = []
+        for st in self.standartsObs:
+            if st["seParams"] is not None:
+                fwhms.append(st["seParams"]["FWHM_IMAGE"])
+        return numpy.mean(fwhms)
 
 
 def coadd_images(imageList, polarMode):
