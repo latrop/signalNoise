@@ -32,6 +32,8 @@ class MenuBar(Tk.Frame):
 
         self.menubar.add_command(label="Alarm", command=self.set_alarm)
 
+        self.menubar.add_command(label="PolarCheck", command=self.polar_check)
+
         self.menubar.add_command(label="Quit", command=self.window.on_closing)
         self.window.root.config(menu=self.menubar)
 
@@ -64,6 +66,10 @@ class MenuBar(Tk.Frame):
 
     def set_alarm(self):
         popup = AlarmPopup(self.window)
+
+    def polar_check(self):
+        PolarChecker(self.window)
+
 
 class ImagPanel(Tk.Frame):
     def __init__(self, window):
@@ -314,3 +320,41 @@ class AlarmPopup(Tk.Frame):
     def ok(self):
         self.window.desiredExposures = int(self.entry.get())
         self.top.destroy()
+
+
+class PolarChecker(Tk.Frame):
+    def __init__(self, window):
+        self.rotation = 0.0
+        self.window = window
+        self.top = Tk.Toplevel(window.root)
+        # Initialisation of graph for y-mode
+        self.yGraph = pylab.Figure(figsize=(6, 4), dpi=100)
+        self.yCanvas = FigureCanvasTkAgg(self.yGraph, master=self.top)
+        self.yFig = self.yGraph.add_subplot(111)
+        self.yFig.axes.set_xticks([])
+        self.yFig.axes.set_yticks([])
+        self.yFig.axes.set_title("Y-mode")
+        self.yCanvas.show()
+        self.yCanvas.get_tk_widget().grid(column=0, row=0, columnspan=3)
+
+        # Initialisation of graph for x-mode
+        self.xGraph = pylab.Figure(figsize=(6, 4), dpi=100)
+        self.xCanvas = FigureCanvasTkAgg(self.xGraph, master=self.top)
+        self.xFig = self.xGraph.add_subplot(111)
+        self.xFig.axes.set_xticks([])
+        self.xFig.axes.set_yticks([])
+        self.xFig.axes.set_title("X-mode")
+        self.xCanvas.show()
+        self.xCanvas.get_tk_widget().grid(column=0, row=1, columnspan=3)
+
+        # Add some bottons
+        self.rotIncButton = Tk.Button(self.top, text="+5 deg", command=lambda: self.rotate(5.0))
+        self.rotIncButton.grid(column=0, row=2, pady=10)
+        self.rotDecButton = Tk.Button(self.top, text="-5 deg", command=lambda: self.rotate(-5.0))
+        self.rotDecButton.grid(column=1, row=2, pady=10)
+        self.okButton = Tk.Button(self.top, text="Ok", command=self.top.destroy)
+        self.okButton.grid(column=2, row=2, pady=10)
+        
+    def rotate(self, angle):
+        self.rotation += angle
+        print self.rotation
