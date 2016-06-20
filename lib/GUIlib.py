@@ -1,6 +1,7 @@
 #! /usr/bin/env python
 
 import os
+import time
 from math import cos, sin, radians
 import itertools
 from os import path
@@ -327,15 +328,13 @@ class AlarmPopup(Tk.Frame):
 
 class PolarChecker(Tk.Frame):
     def __init__(self, window):
-        self.rotation = 20.0
         self.window = window
         self.top = Tk.Toplevel(window.root)
         self.yPlotInstance = None
         self.xPlotInstance = None
+        self.rotation = 0.0
         self.cosa = 1
         self.sina = 0
-        self.cosa = cos(radians(self.rotation))
-        self.sina = sin(radians(self.rotation))
         # Initialisation of graph for y-mode
         self.yGraph = pylab.Figure(figsize=(6, 4), dpi=100)
         self.yCanvas = FigureCanvasTkAgg(self.yGraph, master=self.top)
@@ -413,14 +412,31 @@ class PolarChecker(Tk.Frame):
             yPairY = yObj - 0.7
             xPairX = xObj + 12.5
             yPairX = yObj - 12.5
-            sqDistsObj = (gridX-xObj)**2.0 + (gridY-yObj)**2.0
-            sqDistsPairY = (gridX-xPairY)**2.0 + (gridY-yPairY)**2.0
-            sqDistsPairX = (gridX-xPairX)**2.0 + (gridY-yPairX)**2.0
-            objImag = obj["FLUX_AUTO"] * np.exp(-sqDistsObj/(2*obj["FWHM_IMAGE"])) 
-            dataY += objImag
-            dataY += obj["FLUX_AUTO"] * np.exp(-sqDistsPairY/(2*obj["FWHM_IMAGE"]))
-            dataX += objImag
-            dataX += obj["FLUX_AUTO"] * np.exp(-sqDistsPairX/(2*obj["FWHM_IMAGE"]))
+
+            r = 3*int(obj["FWHM_IMAGE"])
+            # set indexes to work only for part of the image
+            idxObj = np.s_[int(yObj)-r:int(yObj)+r+1,
+                           int(xObj)-r:int(xObj)+r+1]
+            idxPairY = np.s_[int(yPairY)-r:int(yPairY)+r+1,
+                             int(xPairY)-r:int(xPairY)+r+1]
+            idxPairX = np.s_[int(yPairX)-r:int(yPairX)+r+1,
+                             int(xPairX)-r:int(xPairX)+r+1]
+
+
+            sqDistsObj = np.zeros((ySize, xSize))
+            sqDistsPairY = np.zeros((ySize, xSize))
+            sqDistsPairX = np.zeros((ySize, xSize))
+            
+            sqDistsObj[idxObj] = (gridX[idxObj]-xObj)**2.0 + (gridY[idxObj]-yObj)**2.0
+            sqDistsPairY[idxPairY] = (gridX[idxPairY]-xPairY)**2.0 + (gridY[idxPairY]-yPairY)**2.0
+            sqDistsPairX[idxPairX] = (gridX[idxPairX]-xPairX)**2.0 + (gridY[idxPairX]-yPairX)**2.0
+
+            objImag = np.zeros((ySize, xSize))
+            objImag[idxObj] = obj["FLUX_AUTO"] * np.exp(-sqDistsObj[idxObj]/(2*obj["FWHM_IMAGE"])) 
+            dataY[idxObj] += objImag[idxObj]
+            dataY[idxPairY] += obj["FLUX_AUTO"] * np.exp(-sqDistsPairY[idxPairY]/(2*obj["FWHM_IMAGE"]))
+            dataX[idxObj] += objImag[idxObj]
+            dataX[idxPairX] += obj["FLUX_AUTO"] * np.exp(-sqDistsPairX[idxPairX]/(2*obj["FWHM_IMAGE"]))
 
         yMean = np.mean(dataY)
         yStd = np.std(dataY)
