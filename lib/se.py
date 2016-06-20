@@ -62,6 +62,7 @@ class SExCatalogue(object):
             self.index += 1
             return self.objectList[self.index-1]
         else:
+            self.index = 1
             raise StopIteration
     
 

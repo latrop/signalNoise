@@ -1,6 +1,7 @@
 #! /usr/bin/env python
 
 import os
+from math import cos, sin, radians
 import itertools
 from os import path
 import glob
@@ -326,9 +327,15 @@ class AlarmPopup(Tk.Frame):
 
 class PolarChecker(Tk.Frame):
     def __init__(self, window):
-        self.rotation = 0.0
+        self.rotation = 20.0
         self.window = window
         self.top = Tk.Toplevel(window.root)
+        self.yPlotInstance = None
+        self.xPlotInstance = None
+        self.cosa = 1
+        self.sina = 0
+        self.cosa = cos(radians(self.rotation))
+        self.sina = sin(radians(self.rotation))
         # Initialisation of graph for y-mode
         self.yGraph = pylab.Figure(figsize=(6, 4), dpi=100)
         self.yCanvas = FigureCanvasTkAgg(self.yGraph, master=self.top)
@@ -359,31 +366,49 @@ class PolarChecker(Tk.Frame):
         self.okButton = Tk.Button(self.top, text="Ok", command=self.top.destroy)
         self.okButton.grid(column=2, row=2, pady=10)
 
+        # show catalogue
+        self.show_cat()
+
     def rotate(self, angle):
         self.rotation += angle
-        print self.rotation
+        self.cosa = cos(radians(self.rotation))
+        self.sina = sin(radians(self.rotation))
         # Show catalogues
         self.show_cat()
-        
-
         
     def show_cat(self):
         """ Show catalogue as an image to check if some polar pairs are too close"""
         xSize = 382
         ySize = 255
+        xCen = 191
+        yCen = 127.5
         xCoords = self.window.seCat.get_all_values("X_IMAGE")
         yCoords = self.window.seCat.get_all_values("Y_IMAGE")
 
         gridX, gridY = np.meshgrid(range(xSize), range(ySize))
 
+        # remove previous plots if exist
+        if self.yPlotInstance is not None:
+            self.yPlotInstance.remove()
+            self.yPlotInstance = None
+            self.yCanvas.show()
+        if self.xPlotInstance is not None:
+            self.xPlotInstance.remove()
+            self.xPlotInstance = None
+            self.xCanvas.show()
+        
         # Create images for x and y mode
         dataY = np.zeros((ySize, xSize))
         dataX = np.zeros((ySize, xSize))
         for obj in self.window.seCat:
             if (obj["FLUX_AUTO"] <= 0) or (obj["FWHM_IMAGE"] <= 0):
                 continue
-            xObj = obj["X_IMAGE"]
-            yObj = obj["Y_IMAGE"]
+            xObjOrig = obj["X_IMAGE"]
+            yObjOrig = obj["Y_IMAGE"]
+            # Lets rotate points by angle self.rotation around the centre
+            xObj = self.cosa * (xObjOrig-xCen) - self.sina * (yObjOrig-yCen) + xCen
+            yObj = self.sina * (xObjOrig-xCen) + self.cosa * (yObjOrig-yCen) + yCen
+
             xPairY = xObj + 17.7
             yPairY = yObj - 0.7
             xPairX = xObj + 12.5
@@ -399,10 +424,12 @@ class PolarChecker(Tk.Frame):
 
         yMean = np.mean(dataY)
         yStd = np.std(dataY)
-        self.yFig.imshow(dataY, interpolation='nearest', cmap='gray', vmin=yMean, vmax=yMean+2*yStd)
+        self.yPlotInstance = self.yFig.imshow(dataY, interpolation='gaussian',
+                                              cmap='gray', vmin=yMean, vmax=yMean+2*yStd)
         self.yCanvas.show()
 
         xMean = np.mean(dataX)
         xStd = np.std(dataX)
-        self.xFig.imshow(dataX, interpolation='nearest', cmap='gray', vmin=xMean, vmax=xMean+2*xStd)
+        self.xPlotInstance = self.xFig.imshow(dataX, interpolation='gaussian',
+                                              cmap='gray', vmin=xMean, vmax=xMean+2*xStd)
         self.xCanvas.show()
