@@ -330,8 +330,12 @@ class PolarChecker(Tk.Frame):
     def __init__(self, window):
         self.window = window
         self.top = Tk.Toplevel(window.root)
-        self.yPlotInstance = None
-        self.xPlotInstance = None
+        self.yFitsPlotInstance = None
+        self.xFitsPlotInstance = None
+        self.yObjPlotInstance = None
+        self.xObjPlotInstance = None
+        self.yStdPlotInstance = []
+        self.xStdPlotInstance = []
         self.rotation = 0.0
         self.cosa = 1
         self.sina = 0
@@ -374,9 +378,37 @@ class PolarChecker(Tk.Frame):
         self.sina = sin(radians(self.rotation))
         # Show catalogues
         self.show_cat()
-        
+
+    def clear_fig(self):
+        # remove previous plots if exist
+        if self.yFitsPlotInstance is not None:
+            self.yFitsPlotInstance.remove()
+            self.yFitsPlotInstance = None
+            
+        if self.xFitsPlotInstance is not None:
+            self.xFitsPlotInstance.remove()
+            self.xFitsPlotInstance = None
+            
+        if self.yObjPlotInstance is not None:
+            self.yObjPlotInstance.remove()
+            self.yObjPlotInstance = None
+            
+        if self.xObjPlotInstance is not None:
+            self.xObjPlotInstance.remove()
+            self.xObjPlotInstance = None
+            
+        while self.yStdPlotInstance:
+            self.yStdPlotInstance.pop().remove()
+        while self.xStdPlotInstance:
+            self.xStdPlotInstance.pop().remove()
+
+        # self.yCanvas.show()
+        # self.xCanvas.show()
+
+            
     def show_cat(self):
         """ Show catalogue as an image to check if some polar pairs are too close"""
+        self.clear_fig()
         xSize = 382
         ySize = 255
         xCen = 191
@@ -385,16 +417,6 @@ class PolarChecker(Tk.Frame):
         yCoords = self.window.seCat.get_all_values("Y_IMAGE")
 
         gridX, gridY = np.meshgrid(range(xSize), range(ySize))
-
-        # remove previous plots if exist
-        if self.yPlotInstance is not None:
-            self.yPlotInstance.remove()
-            self.yPlotInstance = None
-            self.yCanvas.show()
-        if self.xPlotInstance is not None:
-            self.xPlotInstance.remove()
-            self.xPlotInstance = None
-            self.xCanvas.show()
         
         # Create images for x and y mode
         dataY = np.zeros((ySize, xSize))
@@ -440,12 +462,47 @@ class PolarChecker(Tk.Frame):
 
         yMean = np.mean(dataY)
         yStd = np.std(dataY)
-        self.yPlotInstance = self.yFig.imshow(dataY, interpolation='gaussian',
+        self.yFitsPlotInstance = self.yFig.imshow(dataY, interpolation='gaussian',
                                               cmap='gray', vmin=yMean, vmax=yMean+2*yStd)
-        self.yCanvas.show()
 
         xMean = np.mean(dataX)
         xStd = np.std(dataX)
-        self.xPlotInstance = self.xFig.imshow(dataX, interpolation='gaussian',
-                                              cmap='gray', vmin=xMean, vmax=xMean+2*xStd)
+        self.xFitsPlotInstance = self.xFig.imshow(dataX, interpolation='gaussian',
+                                                  cmap='gray', vmin=xMean, vmax=xMean+2*xStd)
+
+
+        # Overplot location of the object and reference stars
+        if self.window.ref.objSEParams is not None:
+            objX0 = self.window.ref.objSEParams["X_IMAGE"]
+            objY0 = self.window.ref.objSEParams["Y_IMAGE"]
+        else:
+            objX0 = self.window.ref.xObjObs
+            objY0 = self.window.ref.yObjObs
+        objX = self.cosa * (objX0-xCen) - self.sina * (objY0-yCen) + xCen
+        objY = self.sina * (objX0-xCen) + self.cosa * (objY0-yCen) + yCen
+        self.yObjPlotInstance = self.yFig.plot([objX, objX+17.7], [objY, objY-0.7], marker="o", markerfacecolor="none",
+                                               markersize=15, markeredgewidth=2, markeredgecolor="r", linestyle="")[0]
+        self.xObjPlotInstance = self.xFig.plot([objX, objX+12.5], [objY, objY-12.5], marker="o", markerfacecolor="none",
+                                               markersize=15, markeredgewidth=2, markeredgecolor="r", linestyle="")[0]
+
+        for st in self.window.ref.standartsObs:
+            if st['seParams'] is not None:
+                stx0 = st['seParams']["X_IMAGE"]-1
+                sty0 = st['seParams']["Y_IMAGE"]-1
+                markColor = "g"
+            else:
+                stx0 = st['xCen'] - 1
+                sty0 = st['yCen'] - 1
+                markColor = "0.75"
+            stx = self.cosa * (stx0-xCen) - self.sina * (sty0-yCen) + xCen
+            sty = self.sina * (stx0-xCen) + self.cosa * (sty0-yCen) + yCen
+            self.yStdPlotInstance.append(self.yFig.plot([stx, stx+17.7], [sty, sty-0.7], marker="o",
+                                                        markerfacecolor="none", linestyle="", markersize=15,
+                                                        markeredgewidth=2, markeredgecolor=markColor)[0])
+            self.xStdPlotInstance.append(self.xFig.plot([stx, stx+12.5], [sty, sty-12.5], marker="o",
+                                                        markerfacecolor="none", linestyle="", markersize=15,
+                                                        markeredgewidth=2, markeredgecolor=markColor)[0])
+        
+        self.yCanvas.show()
         self.xCanvas.show()
+        
