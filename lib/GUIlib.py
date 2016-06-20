@@ -1,6 +1,9 @@
 #! /usr/bin/env python
 
 import os
+import time
+from math import cos, sin, radians
+import itertools
 from os import path
 import glob
 import Tkinter as Tk
@@ -9,6 +12,7 @@ from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg, NavigationToolb
 import pylab
 import pyfits
 import numpy as np
+from scipy.spatial import cKDTree
 
 from lib.alignment import *
 
@@ -31,6 +35,8 @@ class MenuBar(Tk.Frame):
         self.menubar.add_cascade(label="Background", menu=self.backMenu)
 
         self.menubar.add_command(label="Alarm", command=self.set_alarm)
+
+        self.menubar.add_command(label="PolarCheck", command=self.polar_check)
 
         self.menubar.add_command(label="Quit", command=self.window.on_closing)
         self.window.root.config(menu=self.menubar)
@@ -64,6 +70,10 @@ class MenuBar(Tk.Frame):
 
     def set_alarm(self):
         popup = AlarmPopup(self.window)
+
+    def polar_check(self):
+        PolarChecker(self.window)
+
 
 class ImagPanel(Tk.Frame):
     def __init__(self, window):
@@ -314,3 +324,191 @@ class AlarmPopup(Tk.Frame):
     def ok(self):
         self.window.desiredExposures = int(self.entry.get())
         self.top.destroy()
+
+
+class PolarChecker(Tk.Frame):
+    def __init__(self, window):
+        self.window = window
+        self.top = Tk.Toplevel(window.root)
+        self.yFitsPlotInstance = None
+        self.xFitsPlotInstance = None
+        self.yObjPlotInstance = None
+        self.xObjPlotInstance = None
+        self.yStdPlotInstance = []
+        self.xStdPlotInstance = []
+        self.rotation = 0.0
+        self.cosa = 1
+        self.sina = 0
+        # Initialisation of graph for y-mode
+        self.yGraph = pylab.Figure(figsize=(6, 4), dpi=100)
+        self.yCanvas = FigureCanvasTkAgg(self.yGraph, master=self.top)
+        self.yFig = self.yGraph.add_subplot(111)
+        self.yFig.axes.set_xticks([])
+        self.yFig.axes.set_yticks([])
+        self.yFig.axis([0, 382, 255, 0])
+        self.yFig.axes.set_title("Y-mode")
+        self.yCanvas.show()
+        self.yCanvas.get_tk_widget().grid(column=0, row=0, columnspan=4)
+
+        # Initialisation of graph for x-mode
+        self.xGraph = pylab.Figure(figsize=(6, 4), dpi=100)
+        self.xCanvas = FigureCanvasTkAgg(self.xGraph, master=self.top)
+        self.xFig = self.xGraph.add_subplot(111)
+        self.xFig.axes.set_xticks([])
+        self.xFig.axes.set_yticks([])
+        self.xFig.axis([0, 382, 255, 0])
+        self.xFig.axes.set_title("X-mode")
+        self.xCanvas.show()
+        self.xCanvas.get_tk_widget().grid(column=0, row=1, columnspan=4)
+
+        # Add some bottons
+        self.rotIncButton = Tk.Button(self.top, text="+5 deg", command=lambda: self.rotate(5.0))
+        self.rotIncButton.grid(column=0, row=2, pady=10)
+        self.rotDecButton = Tk.Button(self.top, text="-5 deg", command=lambda: self.rotate(-5.0))
+        self.rotDecButton.grid(column=2, row=2, pady=10)
+        self.okButton = Tk.Button(self.top, text="Ok", command=self.top.destroy)
+        self.okButton.grid(column=3, row=2, pady=10)
+
+        # Text with current rotation
+        self.angleValue = Tk.StringVar()
+        self.angleValue.set("0")
+        Tk.Label(self.top,textvariable=self.angleValue).grid(column=1, row=2)
+
+        # show catalogue
+        self.show_cat()
+
+    def rotate(self, angle):
+        self.rotation += angle
+        self.angleValue.set("%i" % (int(self.rotation)))
+        self.cosa = cos(radians(self.rotation))
+        self.sina = sin(radians(self.rotation))
+        # Show catalogues
+        self.show_cat()
+
+    def clear_fig(self):
+        # remove previous plots if exist
+        if self.yFitsPlotInstance is not None:
+            self.yFitsPlotInstance.remove()
+            self.yFitsPlotInstance = None
+            
+        if self.xFitsPlotInstance is not None:
+            self.xFitsPlotInstance.remove()
+            self.xFitsPlotInstance = None
+            
+        if self.yObjPlotInstance is not None:
+            self.yObjPlotInstance.remove()
+            self.yObjPlotInstance = None
+            
+        if self.xObjPlotInstance is not None:
+            self.xObjPlotInstance.remove()
+            self.xObjPlotInstance = None
+            
+        while self.yStdPlotInstance:
+            self.yStdPlotInstance.pop().remove()
+        while self.xStdPlotInstance:
+            self.xStdPlotInstance.pop().remove()
+
+        # self.yCanvas.show()
+        # self.xCanvas.show()
+
+            
+    def show_cat(self):
+        """ Show catalogue as an image to check if some polar pairs are too close"""
+        self.clear_fig()
+        xSize = 382
+        ySize = 255
+        xCen = 191
+        yCen = 127.5
+        xCoords = self.window.seCat.get_all_values("X_IMAGE")
+        yCoords = self.window.seCat.get_all_values("Y_IMAGE")
+
+        gridX, gridY = np.meshgrid(range(xSize), range(ySize))
+        
+        # Create images for x and y mode
+        dataY = np.zeros((ySize, xSize))
+        dataX = np.zeros((ySize, xSize))
+        for obj in self.window.seCat:
+            if (obj["FLUX_AUTO"] <= 0) or (obj["FWHM_IMAGE"] <= 0):
+                continue
+            xObjOrig = obj["X_IMAGE"]
+            yObjOrig = obj["Y_IMAGE"]
+            # Lets rotate points by angle self.rotation around the centre
+            xObj = self.cosa * (xObjOrig-xCen) - self.sina * (yObjOrig-yCen) + xCen
+            yObj = self.sina * (xObjOrig-xCen) + self.cosa * (yObjOrig-yCen) + yCen
+
+            xPairY = xObj + 17.7
+            yPairY = yObj - 0.7
+            xPairX = xObj + 12.5
+            yPairX = yObj - 12.5
+
+            r = 3*int(obj["FWHM_IMAGE"])
+            # set indexes to work only for part of the image
+            idxObj = np.s_[int(yObj)-r:int(yObj)+r+1,
+                           int(xObj)-r:int(xObj)+r+1]
+            idxPairY = np.s_[int(yPairY)-r:int(yPairY)+r+1,
+                             int(xPairY)-r:int(xPairY)+r+1]
+            idxPairX = np.s_[int(yPairX)-r:int(yPairX)+r+1,
+                             int(xPairX)-r:int(xPairX)+r+1]
+
+
+            sqDistsObj = np.zeros((ySize, xSize))
+            sqDistsPairY = np.zeros((ySize, xSize))
+            sqDistsPairX = np.zeros((ySize, xSize))
+            
+            sqDistsObj[idxObj] = (gridX[idxObj]-xObj)**2.0 + (gridY[idxObj]-yObj)**2.0
+            sqDistsPairY[idxPairY] = (gridX[idxPairY]-xPairY)**2.0 + (gridY[idxPairY]-yPairY)**2.0
+            sqDistsPairX[idxPairX] = (gridX[idxPairX]-xPairX)**2.0 + (gridY[idxPairX]-yPairX)**2.0
+
+            objImag = np.zeros((ySize, xSize))
+            objImag[idxObj] = obj["FLUX_AUTO"] * np.exp(-sqDistsObj[idxObj]/(2*obj["FWHM_IMAGE"])) 
+            dataY[idxObj] += objImag[idxObj]
+            dataY[idxPairY] += obj["FLUX_AUTO"] * np.exp(-sqDistsPairY[idxPairY]/(2*obj["FWHM_IMAGE"]))
+            dataX[idxObj] += objImag[idxObj]
+            dataX[idxPairX] += obj["FLUX_AUTO"] * np.exp(-sqDistsPairX[idxPairX]/(2*obj["FWHM_IMAGE"]))
+
+        yMean = np.mean(dataY)
+        yStd = np.std(dataY)
+        self.yFitsPlotInstance = self.yFig.imshow(dataY, interpolation='gaussian',
+                                              cmap='gray', vmin=yMean, vmax=yMean+2*yStd)
+
+        xMean = np.mean(dataX)
+        xStd = np.std(dataX)
+        self.xFitsPlotInstance = self.xFig.imshow(dataX, interpolation='gaussian',
+                                                  cmap='gray', vmin=xMean, vmax=xMean+2*xStd)
+
+
+        # Overplot location of the object and reference stars
+        if self.window.ref.objSEParams is not None:
+            objX0 = self.window.ref.objSEParams["X_IMAGE"]
+            objY0 = self.window.ref.objSEParams["Y_IMAGE"]
+        else:
+            objX0 = self.window.ref.xObjObs
+            objY0 = self.window.ref.yObjObs
+        objX = self.cosa * (objX0-xCen) - self.sina * (objY0-yCen) + xCen
+        objY = self.sina * (objX0-xCen) + self.cosa * (objY0-yCen) + yCen
+        self.yObjPlotInstance = self.yFig.plot([objX, objX+17.7], [objY, objY-0.7], marker="o", markerfacecolor="none",
+                                               markersize=15, markeredgewidth=2, markeredgecolor="r", linestyle="")[0]
+        self.xObjPlotInstance = self.xFig.plot([objX, objX+12.5], [objY, objY-12.5], marker="o", markerfacecolor="none",
+                                               markersize=15, markeredgewidth=2, markeredgecolor="r", linestyle="")[0]
+
+        for st in self.window.ref.standartsObs:
+            if st['seParams'] is not None:
+                stx0 = st['seParams']["X_IMAGE"]-1
+                sty0 = st['seParams']["Y_IMAGE"]-1
+                markColor = "g"
+            else:
+                stx0 = st['xCen'] - 1
+                sty0 = st['yCen'] - 1
+                markColor = "0.75"
+            stx = self.cosa * (stx0-xCen) - self.sina * (sty0-yCen) + xCen
+            sty = self.sina * (stx0-xCen) + self.cosa * (sty0-yCen) + yCen
+            self.yStdPlotInstance.append(self.yFig.plot([stx, stx+17.7], [sty, sty-0.7], marker="o",
+                                                        markerfacecolor="none", linestyle="", markersize=15,
+                                                        markeredgewidth=2, markeredgecolor=markColor)[0])
+            self.xStdPlotInstance.append(self.xFig.plot([stx, stx+12.5], [sty, sty-12.5], marker="o",
+                                                        markerfacecolor="none", linestyle="", markersize=15,
+                                                        markeredgewidth=2, markeredgecolor=markColor)[0])
+        
+        self.yCanvas.show()
+        self.xCanvas.show()
+        
