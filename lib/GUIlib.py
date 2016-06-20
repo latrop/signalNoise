@@ -1,6 +1,7 @@
 #! /usr/bin/env python
 
 import os
+import itertools
 from os import path
 import glob
 import Tkinter as Tk
@@ -9,6 +10,7 @@ from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg, NavigationToolb
 import pylab
 import pyfits
 import numpy as np
+from scipy.spatial import cKDTree
 
 from lib.alignment import *
 
@@ -333,6 +335,7 @@ class PolarChecker(Tk.Frame):
         self.yFig = self.yGraph.add_subplot(111)
         self.yFig.axes.set_xticks([])
         self.yFig.axes.set_yticks([])
+        self.yFig.axis([0, 382, 255, 0])
         self.yFig.axes.set_title("Y-mode")
         self.yCanvas.show()
         self.yCanvas.get_tk_widget().grid(column=0, row=0, columnspan=3)
@@ -343,6 +346,7 @@ class PolarChecker(Tk.Frame):
         self.xFig = self.xGraph.add_subplot(111)
         self.xFig.axes.set_xticks([])
         self.xFig.axes.set_yticks([])
+        self.xFig.axis([0, 382, 255, 0])
         self.xFig.axes.set_title("X-mode")
         self.xCanvas.show()
         self.xCanvas.get_tk_widget().grid(column=0, row=1, columnspan=3)
@@ -354,7 +358,51 @@ class PolarChecker(Tk.Frame):
         self.rotDecButton.grid(column=1, row=2, pady=10)
         self.okButton = Tk.Button(self.top, text="Ok", command=self.top.destroy)
         self.okButton.grid(column=2, row=2, pady=10)
-        
+
     def rotate(self, angle):
         self.rotation += angle
         print self.rotation
+        # Show catalogues
+        self.show_cat()
+        
+
+        
+    def show_cat(self):
+        """ Show catalogue as an image to check if some polar pairs are too close"""
+        xSize = 382
+        ySize = 255
+        xCoords = self.window.seCat.get_all_values("X_IMAGE")
+        yCoords = self.window.seCat.get_all_values("Y_IMAGE")
+
+        gridX, gridY = np.meshgrid(range(xSize), range(ySize))
+
+        # Create images for x and y mode
+        dataY = np.zeros((ySize, xSize))
+        dataX = np.zeros((ySize, xSize))
+        for obj in self.window.seCat:
+            if (obj["FLUX_AUTO"] <= 0) or (obj["FWHM_IMAGE"] <= 0):
+                continue
+            xObj = obj["X_IMAGE"]
+            yObj = obj["Y_IMAGE"]
+            xPairY = xObj + 17.7
+            yPairY = yObj - 0.7
+            xPairX = xObj + 12.5
+            yPairX = yObj - 12.5
+            sqDistsObj = (gridX-xObj)**2.0 + (gridY-yObj)**2.0
+            sqDistsPairY = (gridX-xPairY)**2.0 + (gridY-yPairY)**2.0
+            sqDistsPairX = (gridX-xPairX)**2.0 + (gridY-yPairX)**2.0
+            objImag = obj["FLUX_AUTO"] * np.exp(-sqDistsObj/(2*obj["FWHM_IMAGE"])) 
+            dataY += objImag
+            dataY += obj["FLUX_AUTO"] * np.exp(-sqDistsPairY/(2*obj["FWHM_IMAGE"]))
+            dataX += objImag
+            dataX += obj["FLUX_AUTO"] * np.exp(-sqDistsPairX/(2*obj["FWHM_IMAGE"]))
+
+        yMean = np.mean(dataY)
+        yStd = np.std(dataY)
+        self.yFig.imshow(dataY, interpolation='nearest', cmap='gray', vmin=yMean, vmax=yMean+2*yStd)
+        self.yCanvas.show()
+
+        xMean = np.mean(dataX)
+        xStd = np.std(dataX)
+        self.xFig.imshow(dataX, interpolation='nearest', cmap='gray', vmin=xMean, vmax=xMean+2*xStd)
+        self.xCanvas.show()

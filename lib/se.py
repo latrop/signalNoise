@@ -16,6 +16,8 @@ class SExCatalogue(object):
         self.objectList = []
         self.legend = []
         self.inds = [-1]
+        self.index = 0  # For iterations
+        # Parse SE catalogue with arbitrary number of objects and parameters
         for line in open(catFileName):
             sLine = line.strip()
             obj = {}
@@ -33,6 +35,7 @@ class SExCatalogue(object):
                 else:
                     obj[self.legend[i]] = params[b:e]
             self.objectList.append(obj)
+        self.numOfObjects = len(self.objectList)
     
     def find_nearest(self, x, y):
         """ Returns nearest object to given coordinates"""
@@ -46,6 +49,21 @@ class SExCatalogue(object):
     def get_median_value(self, parameter):
         return np.median([obj[parameter] for obj in self.objectList])
 
+    def get_all_values(self, parameter):
+        return np.array([obj[parameter] for obj in self.objectList])
+    
+
+    def __iter__(self):
+        return self
+
+    def next(self):
+        """ Iteration method """
+        if self.index < self.numOfObjects:
+            self.index += 1
+            return self.objectList[self.index-1]
+        else:
+            raise StopIteration
+    
 
 def call_SE(fitsFile, catName=None, addString=None):
     print "calling se"
