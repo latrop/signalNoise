@@ -348,7 +348,7 @@ class PolarChecker(Tk.Frame):
         self.yFig.axis([0, 382, 255, 0])
         self.yFig.axes.set_title("Y-mode")
         self.yCanvas.show()
-        self.yCanvas.get_tk_widget().grid(column=0, row=0, columnspan=3)
+        self.yCanvas.get_tk_widget().grid(column=0, row=0, columnspan=4)
 
         # Initialisation of graph for x-mode
         self.xGraph = pylab.Figure(figsize=(6, 4), dpi=100)
@@ -359,21 +359,27 @@ class PolarChecker(Tk.Frame):
         self.xFig.axis([0, 382, 255, 0])
         self.xFig.axes.set_title("X-mode")
         self.xCanvas.show()
-        self.xCanvas.get_tk_widget().grid(column=0, row=1, columnspan=3)
+        self.xCanvas.get_tk_widget().grid(column=0, row=1, columnspan=4)
 
         # Add some bottons
         self.rotIncButton = Tk.Button(self.top, text="+5 deg", command=lambda: self.rotate(5.0))
         self.rotIncButton.grid(column=0, row=2, pady=10)
         self.rotDecButton = Tk.Button(self.top, text="-5 deg", command=lambda: self.rotate(-5.0))
-        self.rotDecButton.grid(column=1, row=2, pady=10)
+        self.rotDecButton.grid(column=2, row=2, pady=10)
         self.okButton = Tk.Button(self.top, text="Ok", command=self.top.destroy)
-        self.okButton.grid(column=2, row=2, pady=10)
+        self.okButton.grid(column=3, row=2, pady=10)
+
+        # Text with current rotation
+        self.angleValue = Tk.StringVar()
+        self.angleValue.set("0")
+        Tk.Label(self.top,textvariable=self.angleValue).grid(column=1, row=2)
 
         # show catalogue
         self.show_cat()
 
     def rotate(self, angle):
         self.rotation += angle
+        self.angleValue.set("%i" % (int(self.rotation)))
         self.cosa = cos(radians(self.rotation))
         self.sina = sin(radians(self.rotation))
         # Show catalogues
