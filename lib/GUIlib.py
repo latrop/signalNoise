@@ -113,7 +113,7 @@ class ImagPanel(Tk.Frame):
         ySize, xSize = data.shape
         meanValue = np.mean(data)
         stdValue = np.std(data)
-        self.fitsPlotInstance = self.fig.imshow(data, interpolation='nearest', cmap='gray',
+        self.fitsPlotInstance = self.fig.imshow(data, interpolation='gaussian', cmap='gray',
                                                 vmin=meanValue, vmax=meanValue+2*stdValue)
         self.fig.axis([0, xSize, ySize, 0])
         self.canvas.show()
