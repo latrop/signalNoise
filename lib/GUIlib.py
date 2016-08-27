@@ -72,6 +72,10 @@ class MenuBar(Tk.Frame):
         popup = AlarmPopup(self.window)
 
     def polar_check(self):
+        if self.window.filtName in "xy":
+            tkMessageBox.showwarning("PolarCheck",
+                                     "Works only in photometry mode.")
+            return
         PolarChecker(self.window)
 
 
@@ -330,6 +334,7 @@ class PolarChecker(Tk.Frame):
     def __init__(self, window):
         self.window = window
         self.top = Tk.Toplevel(window.root)
+        # self.top.geometry("500x1000")
         self.yFitsPlotInstance = None
         self.xFitsPlotInstance = None
         self.yObjPlotInstance = None
@@ -340,7 +345,7 @@ class PolarChecker(Tk.Frame):
         self.cosa = 1
         self.sina = 0
         # Initialisation of graph for y-mode
-        self.yGraph = pylab.Figure(figsize=(6, 4), dpi=100)
+        self.yGraph = pylab.Figure(figsize=(6, 4), dpi=80)
         self.yCanvas = FigureCanvasTkAgg(self.yGraph, master=self.top)
         self.yFig = self.yGraph.add_subplot(111)
         self.yFig.axes.set_xticks([])
@@ -351,7 +356,7 @@ class PolarChecker(Tk.Frame):
         self.yCanvas.get_tk_widget().grid(column=0, row=0, columnspan=4)
 
         # Initialisation of graph for x-mode
-        self.xGraph = pylab.Figure(figsize=(6, 4), dpi=100)
+        self.xGraph = pylab.Figure(figsize=(6, 4), dpi=80)
         self.xCanvas = FigureCanvasTkAgg(self.xGraph, master=self.top)
         self.xFig = self.xGraph.add_subplot(111)
         self.xFig.axes.set_xticks([])
