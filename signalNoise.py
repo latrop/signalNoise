@@ -44,6 +44,7 @@ def parse_object_file_name(fName):
 
 class MainApplication(Tk.Frame):
     def __init__(self, *args, **kwargs):
+        self.objName = None
         self.currentObject = None
         self.currentFilter = None
         self.rawImages = []
@@ -54,6 +55,9 @@ class MainApplication(Tk.Frame):
         self.desiredExposures = 0
         self.badObjects = []
         self.biasValue, self.darkValue = 0.0, 0.0
+        # check if there is the working directory and create if nessesary
+        if not path.exists("workDir"):
+            os.mkdir("workDir")
         # cache flats
         self.flats = {}
         for filt in 'bvriXY':
@@ -98,6 +102,8 @@ class MainApplication(Tk.Frame):
             fName = path.basename(f)
             if (not "dark" in fName) and (not "bias" in fName) and (path.isfile(f)):
                 lightFiles.append(f)
+        if len(lightFiles) == 0:
+            return
         newestFile = max(lightFiles, key=path.getctime)
         fNameWithoutPath = path.basename(newestFile)
         # Let's find what object is it
@@ -259,19 +265,24 @@ class MainApplication(Tk.Frame):
                     addString="-BACKPHOTO_TYPE %s" % (self.menubar.backTypeVar.get()))
             self.seCat = SExCatalogue(catName)
 
-            # Find median FWHM of the image
-            medianFWHM = self.seCat.get_median_value("FWHM_IMAGE")
-
-            # Now we want to run SExtractor once again to get fluxes in
-            # circular apertures of 1.55*FWHM and 1.55*sqrt(2)*FWHM radii
-            aperRadius = (1.55*medianFWHM+1)
-            addString = "-PHOT_APERTURES %1.2f " % (2*aperRadius)
-            addString += "-BACKPHOTO_TYPE %s" % (self.menubar.backTypeVar.get())
-            call_SE(summedFile, catName, addString=addString)
-            self.seCat = SExCatalogue(catName)
-
             # Match objects from reference image on the observed one
             returnCode = self.ref.match_objects(summedFile, self.seCat)
+            if not returnCode:
+                # Find mean FWHM of standarts
+                meanFWHM = self.ref.get_standatds_fwhm()
+                print meanFWHM
+
+                # Now we want to run SExtractor once again to get fluxes in
+                # circular apertures of 1.55*FWHM and 1.55*sqrt(2)*FWHM radii
+                aperRadius = (1.55*meanFWHM+1)
+                addString = "-PHOT_APERTURES %1.2f " % (2*aperRadius)
+                addString += "-BACKPHOTO_TYPE %s" % (self.menubar.backTypeVar.get())
+                call_SE(summedFile, catName, addString=addString)
+                self.seCat = SExCatalogue(catName)
+
+                # Match objects once again. We already have a valid transform, so
+                # we only need to match objects
+                returnCode = self.ref.match_objects(summedFile, self.seCat, matchOnly=True)
 
         if returnCode:
             # matching failed. Maybe we need to coadd more_objects
