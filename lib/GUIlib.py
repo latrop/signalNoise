@@ -72,7 +72,7 @@ class MenuBar(Tk.Frame):
         popup = AlarmPopup(self.window)
 
     def polar_check(self):
-        if self.window.filtName in "xy":
+        if self.window.filtName.lower() in "xy":
             tkMessageBox.showwarning("PolarCheck",
                                      "Works only in photometry mode.")
             return
