@@ -41,7 +41,7 @@ class SExCatalogue(object):
         """ Returns nearest object to given coordinates"""
         nearest = min(self.objectList, key=lambda obj: hypot(x-obj["X_IMAGE"], y-obj["Y_IMAGE"]))
         dist = hypot(x-nearest["X_IMAGE"], y-nearest["Y_IMAGE"])
-        if dist < 5.0:
+        if dist < 7.0:
             return nearest
         else:
             return None
