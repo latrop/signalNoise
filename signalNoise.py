@@ -7,6 +7,7 @@ import os
 from os import path
 sys.path.append(path.join(os.getcwd(), "lib"))
 import numpy as np
+from shutil import move
 
 import pylab
 
@@ -138,7 +139,30 @@ class MainApplication(Tk.Frame):
                 os.remove(f)
 
     def rename_files(self, numberOfDesiredExposures):
-        print self.rawImages
+        """
+        Function renames files in such a way that there shall no be
+        any gaps in the file numbers and numeration starts from the
+        numberOfDesiredExposures value. i.e 002,005,006,008 become
+        010,009,008,007 if numberOfDesiredExposure==10.
+        """
+        nexp = numberOfDesiredExposures
+        tmpDir = path.join("workDir", "tmpRename")
+        if not path.exists(tmpDir):
+            os.mkdir(tmpDir)
+        for fName in sorted(self.rawImages, reverse=True):
+            fNameWithoutPath = path.basename(fName)
+            objName, filtName, addString, frameNumber = parse_object_file_name(fNameWithoutPath)
+            fout = "".join([objName, addString, filtName])
+            fout += "%03i" % nexp
+            nexp -= 1
+            fout += ".FIT"
+            fout = path.join(tmpDir, fout)
+            move(fName, fout)
+        for fName in glob.glob(path.join(tmpDir, "*.FIT")):
+            fNameNoPath = path.basename(fName)
+            move(fName, path.join(self.dirName, fNameNoPath))
+        os.rmdir(tmpDir)
+                           
 
     def run_computation(self):
         """ This is the main function. It is been

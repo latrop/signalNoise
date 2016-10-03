@@ -80,6 +80,9 @@ class MenuBar(Tk.Frame):
             return
         PolarChecker(self.window)
 
+    def rename_files(self):
+        RenameFilesPopup(self.window)
+
 
 class ImagPanel(Tk.Frame):
     def __init__(self, window):
@@ -345,18 +348,17 @@ class RenameFilesPopup(Tk.Frame):
         self.button.grid(column=0, row=1, padx=5, pady=5)
         self.cancelButton = Tk.Button(self.top, text="Cancel", command=self.top.destroy)
         self.cancelButton.grid(column=1, row=1, padx=5, pady=5)
+        self.top.wm_attributes("-topmost", 1)
     
     def ok(self):
         desiredExposures = int(self.entry.get())
-        if desiredExposures > len(self.window.rawImages):
+        if desiredExposures >= len(self.window.rawImages):
             self.window.rename_files(desiredExposures)
             self.window.reset_new_object()
             self.top.destroy()
         else:
             tkMessageBox.showwarning("Rename files",
-                                     "The number of desired exposures should be bigger than\n
-                                     the number of already taken ones.")
-                
+                                     """The number of desired exposures should be bigger than the number of already taken ones.""")
 
 class PolarChecker(Tk.Frame):
     def __init__(self, window):
