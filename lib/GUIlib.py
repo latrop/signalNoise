@@ -353,12 +353,14 @@ class RenameFilesPopup(Tk.Frame):
     def ok(self):
         desiredExposures = int(self.entry.get())
         if desiredExposures >= len(self.window.rawImages):
-            self.window.rename_files(desiredExposures)
+            minorExp = self.window.rename_files(desiredExposures)
             self.window.reset_new_object()
+            tkMessageBox.showinfo("Rename files",
+                                  "All done, minor exposure is %i" % (minorExp+1))
             self.top.destroy()
         else:
             tkMessageBox.showwarning("Rename files",
-                                     """The number of desired exposures should be bigger than the number of already taken ones.""")
+                                     "The number of desired exposures should be bigger than the number of already taken ones.")
 
 class PolarChecker(Tk.Frame):
     def __init__(self, window):

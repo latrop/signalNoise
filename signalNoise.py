@@ -162,6 +162,7 @@ class MainApplication(Tk.Frame):
             fNameNoPath = path.basename(fName)
             move(fName, path.join(self.dirName, fNameNoPath))
         os.rmdir(tmpDir)
+        return nexp
                            
 
     def run_computation(self):
