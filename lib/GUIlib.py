@@ -24,6 +24,7 @@ class MenuBar(Tk.Frame):
         self.fileMenu = Tk.Menu(self.menubar, tearoff=0)
         # self.fileMenu.add_command(label="Select object", command=self.select_object)
         self.fileMenu.add_command(label="Select folder", command=self.select_folder)
+        self.fileMenu.add_command(label="Reset", command=self.window.reset_new_object)
         self.menubar.add_cascade(label="File", menu=self.fileMenu)
 
         # background type configuration
