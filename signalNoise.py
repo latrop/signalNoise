@@ -137,6 +137,9 @@ class MainApplication(Tk.Frame):
             if (not "dark" in path.basename(f)) and (not "bias" in path.basename(f)):
                 os.remove(f)
 
+    def rename_files(self, numberOfDesiredExposures):
+        print self.rawImages
+
     def run_computation(self):
         """ This is the main function. It is been
         called as soon as the object is selected."""
@@ -222,10 +225,10 @@ class MainApplication(Tk.Frame):
 
         # Coadd images
         if not self.polarMode:
-            numOfCoaddedImages = coadd_images(self.darkCleanImages, None)
+            self.numOfCoaddedImages = coadd_images(self.darkCleanImages, None)
         else:
-            numOfCoaddedImages = coadd_images(self.darkCleanImages, self.filtName)
-        self.rightPanel.update_message("Images summed", "%i" % numOfCoaddedImages)
+            self.numOfCoaddedImages = coadd_images(self.darkCleanImages, self.filtName)
+        self.rightPanel.update_message("Images summed", "%i" % self.numOfCoaddedImages)
 
 
         # Subtract background
@@ -301,7 +304,7 @@ class MainApplication(Tk.Frame):
             objSn, objMag, objMagSigma, stSn = get_photometry(self.seCat, self.ref, self.filtName, aperRadius,
                                                               self.biasValue, self.darkValue, backData)
             self.rightPanel.show_photometry_data(objSn, objMag, objMagSigma, stSn)
-            self.magData.append((numOfCoaddedImages, objMag))
+            self.magData.append((self.numOfCoaddedImages, objMag))
 
         elif self.polarMode:
             objSn, objPairSn, stSn, fluxRatios = get_photometry_polar_mode(self.seCatPolar, self.ref, aperRadius,

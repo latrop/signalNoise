@@ -24,6 +24,7 @@ class MenuBar(Tk.Frame):
         self.fileMenu = Tk.Menu(self.menubar, tearoff=0)
         # self.fileMenu.add_command(label="Select object", command=self.select_object)
         self.fileMenu.add_command(label="Select folder", command=self.select_folder)
+        self.fileMenu.add_command(label="Rename files", command=self.rename_files)
         self.fileMenu.add_command(label="Reset", command=self.window.reset_new_object)
         self.menubar.add_cascade(label="File", menu=self.fileMenu)
 
@@ -330,6 +331,32 @@ class AlarmPopup(Tk.Frame):
         self.window.desiredExposures = int(self.entry.get())
         self.top.destroy()
 
+
+class RenameFilesPopup(Tk.Frame):
+    def __init__(self, window):
+        self.window = window
+        self.top = Tk.Toplevel(window.root)
+        self.top.geometry('+%i+%i' % (window.root.winfo_x()+30, window.root.winfo_y()+30)) 
+        Tk.Label(self.top, text="Input desired number of exposures").grid(column=0, row=0, padx=5, pady=5)
+        self.entry = Tk.Entry(self.top, width=5)
+        self.entry.insert(0, str(abs(window.numOfCoaddedImages)))
+        self.entry.grid(column=1, row=0, padx=5, pady=5)
+        self.button = Tk.Button(self.top, text="OK", command=self.ok)
+        self.button.grid(column=0, row=1, padx=5, pady=5)
+        self.cancelButton = Tk.Button(self.top, text="Cancel", command=self.top.destroy)
+        self.cancelButton.grid(column=1, row=1, padx=5, pady=5)
+    
+    def ok(self):
+        desiredExposures = int(self.entry.get())
+        if desiredExposures > len(self.window.rawImages):
+            self.window.rename_files(desiredExposures)
+            self.window.reset_new_object()
+            self.top.destroy()
+        else:
+            tkMessageBox.showwarning("Rename files",
+                                     "The number of desired exposures should be bigger than\n
+                                     the number of already taken ones.")
+                
 
 class PolarChecker(Tk.Frame):
     def __init__(self, window):
