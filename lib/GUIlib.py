@@ -7,6 +7,7 @@ import itertools
 from os import path
 import glob
 import Tkinter as Tk
+import tkFont
 import tkFileDialog, tkMessageBox
 from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg, NavigationToolbar2TkAgg
 import pylab
@@ -39,6 +40,8 @@ class MenuBar(Tk.Frame):
         self.menubar.add_command(label="Alarm", command=self.set_alarm)
 
         self.menubar.add_command(label="PolarCheck", command=self.polar_check)
+
+        self.menubar.add_command(label="Log", command=self.show_log)
 
         self.menubar.add_command(label="Quit", command=self.window.on_closing)
         self.window.root.config(menu=self.menubar)
@@ -82,6 +85,9 @@ class MenuBar(Tk.Frame):
 
     def rename_files(self):
         RenameFilesPopup(self.window)
+
+    def show_log(self):
+        LogWindow(self.window)
 
 
 class ImagPanel(Tk.Frame):
@@ -549,3 +555,30 @@ class PolarChecker(Tk.Frame):
         self.yCanvas.show()
         self.xCanvas.show()
         
+
+class LogWindow(Tk.Frame):
+    """
+    Window to show photometry log data
+    """
+    def __init__(self, window):
+        self.top = Tk.Toplevel(window.root)
+        self.textFrame = Tk.Text(self.top)
+        self.scroll = Tk.Scrollbar(self.top)
+        self.scroll.pack(side=Tk.RIGHT, fill=Tk.Y)
+        self.textFrame.pack(side=Tk.LEFT, fill=Tk.Y)
+        self.scroll.config(command=self.textFrame.yview)
+        self.textFrame.config(yscrollcommand=self.scroll.set,
+                              font=tkFont.Font(family="Times", size=12))
+        # Put text into frame
+        for key in window.photoLog:
+            objName = key.split(":")[0]
+            addString = key.split(":")[1]
+            if addString:
+                logString = "%s(%s): " % (objName, addString)
+            else:
+                logString = "%s:  " % (objName)
+            for filtName in "bvri":
+                if filtName in window.photoLog[key]:
+                    logString += "M_%s=%1.2f  " % (filtName, window.photoLog[key][filtName])
+            logString += "\n"
+            self.textFrame.insert(Tk.END, logString)

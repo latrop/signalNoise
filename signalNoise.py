@@ -8,6 +8,7 @@ from os import path
 sys.path.append(path.join(os.getcwd(), "lib"))
 import numpy as np
 from shutil import move
+from collections import OrderedDict
 
 import pylab
 
@@ -56,6 +57,7 @@ class MainApplication(Tk.Frame):
         self.desiredExposures = 0
         self.badObjects = []
         self.biasValue, self.darkValue = 0.0, 0.0
+        self.photoLog = OrderedDict()
         # check if there is the working directory and create if nessesary
         if not path.exists("workDir"):
             os.mkdir("workDir")
@@ -131,7 +133,9 @@ class MainApplication(Tk.Frame):
     def reset_new_object(self):
         self.reset_new_filter()
         self.currentObject = self.objName
+        self.currentAddString = self.addString
         self.ref = Reference(self.objName)
+        self.photoLog["%s:%s"%(self.objName,self.addString)] = {}
 
         # Clear working directory
         for f in glob.glob(path.join("workDir", "*")):
@@ -172,7 +176,7 @@ class MainApplication(Tk.Frame):
             # new filter being processed
             self.reset_new_filter()
 
-        if self.objName != self.currentObject:
+        if (self.objName != self.currentObject) or (self.addString != self.currentAddString):
             # new object is being processed
             self.reset_new_object()
 
@@ -330,6 +334,8 @@ class MainApplication(Tk.Frame):
                                                               self.biasValue, self.darkValue, backData)
             self.rightPanel.show_photometry_data(objSn, objMag, objMagSigma, stSn)
             self.magData.append((self.numOfCoaddedImages, objMag))
+            # store magnitude value to a photomerty log
+            self.photoLog["%s:%s"%(self.objName,self.addString)][self.filtName]=objMag
 
         elif self.polarMode:
             objSn, objPairSn, stSn, fluxRatios = get_photometry_polar_mode(self.seCatPolar, self.ref, aperRadius,
