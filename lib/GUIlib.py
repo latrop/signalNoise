@@ -7,6 +7,7 @@ import itertools
 from os import path
 import glob
 import Tkinter as Tk
+import tkFont
 import tkFileDialog, tkMessageBox
 from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg, NavigationToolbar2TkAgg
 import pylab
@@ -24,6 +25,8 @@ class MenuBar(Tk.Frame):
         self.fileMenu = Tk.Menu(self.menubar, tearoff=0)
         # self.fileMenu.add_command(label="Select object", command=self.select_object)
         self.fileMenu.add_command(label="Select folder", command=self.select_folder)
+        self.fileMenu.add_command(label="Rename files", command=self.rename_files)
+        self.fileMenu.add_command(label="Reset", command=self.window.reset_new_object)
         self.menubar.add_cascade(label="File", menu=self.fileMenu)
 
         # background type configuration
@@ -37,6 +40,8 @@ class MenuBar(Tk.Frame):
         self.menubar.add_command(label="Alarm", command=self.set_alarm)
 
         self.menubar.add_command(label="PolarCheck", command=self.polar_check)
+
+        self.menubar.add_command(label="Log", command=self.show_log)
 
         self.menubar.add_command(label="Quit", command=self.window.on_closing)
         self.window.root.config(menu=self.menubar)
@@ -77,6 +82,12 @@ class MenuBar(Tk.Frame):
                                      "Works only in photometry mode.")
             return
         PolarChecker(self.window)
+
+    def rename_files(self):
+        RenameFilesPopup(self.window)
+
+    def show_log(self):
+        LogWindow(self.window)
 
 
 class ImagPanel(Tk.Frame):
@@ -330,6 +341,33 @@ class AlarmPopup(Tk.Frame):
         self.top.destroy()
 
 
+class RenameFilesPopup(Tk.Frame):
+    def __init__(self, window):
+        self.window = window
+        self.top = Tk.Toplevel(window.root)
+        self.top.geometry('+%i+%i' % (window.root.winfo_x()+30, window.root.winfo_y()+30)) 
+        Tk.Label(self.top, text="Input desired number of exposures").grid(column=0, row=0, padx=5, pady=5)
+        self.entry = Tk.Entry(self.top, width=5)
+        self.entry.insert(0, str(abs(window.numOfCoaddedImages)))
+        self.entry.grid(column=1, row=0, padx=5, pady=5)
+        self.button = Tk.Button(self.top, text="OK", command=self.ok)
+        self.button.grid(column=0, row=1, padx=5, pady=5)
+        self.cancelButton = Tk.Button(self.top, text="Cancel", command=self.top.destroy)
+        self.cancelButton.grid(column=1, row=1, padx=5, pady=5)
+        self.top.wm_attributes("-topmost", 1)
+    
+    def ok(self):
+        desiredExposures = int(self.entry.get())
+        if desiredExposures >= len(self.window.rawImages):
+            minorExp = self.window.rename_files(desiredExposures)
+            self.window.reset_new_object()
+            tkMessageBox.showinfo("Rename files",
+                                  "All done, minor exposure is %i" % (minorExp+1))
+            self.top.destroy()
+        else:
+            tkMessageBox.showwarning("Rename files",
+                                     "The number of desired exposures should be bigger than the number of already taken ones.")
+
 class PolarChecker(Tk.Frame):
     def __init__(self, window):
         self.window = window
@@ -517,3 +555,30 @@ class PolarChecker(Tk.Frame):
         self.yCanvas.show()
         self.xCanvas.show()
         
+
+class LogWindow(Tk.Frame):
+    """
+    Window to show photometry log data
+    """
+    def __init__(self, window):
+        self.top = Tk.Toplevel(window.root)
+        self.textFrame = Tk.Text(self.top)
+        self.scroll = Tk.Scrollbar(self.top)
+        self.scroll.pack(side=Tk.RIGHT, fill=Tk.Y)
+        self.textFrame.pack(side=Tk.LEFT, fill=Tk.Y)
+        self.scroll.config(command=self.textFrame.yview)
+        self.textFrame.config(yscrollcommand=self.scroll.set,
+                              font=tkFont.Font(family="Times", size=12))
+        # Put text into frame
+        for key in window.photoLog:
+            objName = key.split(":")[0]
+            addString = key.split(":")[1]
+            if addString:
+                logString = "%s(%s): " % (objName, addString)
+            else:
+                logString = "%s:  " % (objName)
+            for filtName in "bvri":
+                if filtName in window.photoLog[key]:
+                    logString += "M_%s=%1.2f  " % (filtName, window.photoLog[key][filtName])
+            logString += "\n"
+            self.textFrame.insert(Tk.END, logString)

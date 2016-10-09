@@ -7,6 +7,8 @@ import os
 from os import path
 sys.path.append(path.join(os.getcwd(), "lib"))
 import numpy as np
+from shutil import move
+from collections import OrderedDict
 
 import pylab
 
@@ -55,6 +57,7 @@ class MainApplication(Tk.Frame):
         self.desiredExposures = 0
         self.badObjects = []
         self.biasValue, self.darkValue = 0.0, 0.0
+        self.photoLog = OrderedDict()
         # check if there is the working directory and create if nessesary
         if not path.exists("workDir"):
             os.mkdir("workDir")
@@ -130,12 +133,41 @@ class MainApplication(Tk.Frame):
     def reset_new_object(self):
         self.reset_new_filter()
         self.currentObject = self.objName
+        self.currentAddString = self.addString
         self.ref = Reference(self.objName)
+        self.photoLog["%s:%s"%(self.objName,self.addString)] = {}
 
         # Clear working directory
         for f in glob.glob(path.join("workDir", "*")):
             if (not "dark" in path.basename(f)) and (not "bias" in path.basename(f)):
                 os.remove(f)
+
+    def rename_files(self, numberOfDesiredExposures):
+        """
+        Function renames files in such a way that there shall no be
+        any gaps in the file numbers and numeration starts from the
+        numberOfDesiredExposures value. i.e 002,005,006,008 become
+        010,009,008,007 if numberOfDesiredExposure==10.
+        """
+        nexp = numberOfDesiredExposures
+        tmpDir = path.join("workDir", "tmpRename")
+        if not path.exists(tmpDir):
+            os.mkdir(tmpDir)
+        for fName in sorted(self.rawImages, reverse=True):
+            fNameWithoutPath = path.basename(fName)
+            objName, filtName, addString, frameNumber = parse_object_file_name(fNameWithoutPath)
+            fout = "".join([objName, addString, filtName])
+            fout += "%03i" % nexp
+            nexp -= 1
+            fout += ".FIT"
+            fout = path.join(tmpDir, fout)
+            move(fName, fout)
+        for fName in glob.glob(path.join(tmpDir, "*.FIT")):
+            fNameNoPath = path.basename(fName)
+            move(fName, path.join(self.dirName, fNameNoPath))
+        os.rmdir(tmpDir)
+        return nexp
+                           
 
     def run_computation(self):
         """ This is the main function. It is been
@@ -144,7 +176,7 @@ class MainApplication(Tk.Frame):
             # new filter being processed
             self.reset_new_filter()
 
-        if self.objName != self.currentObject:
+        if (self.objName != self.currentObject) or (self.addString != self.currentAddString):
             # new object is being processed
             self.reset_new_object()
 
@@ -222,10 +254,10 @@ class MainApplication(Tk.Frame):
 
         # Coadd images
         if not self.polarMode:
-            numOfCoaddedImages = coadd_images(self.darkCleanImages, None)
+            self.numOfCoaddedImages = coadd_images(self.darkCleanImages, None)
         else:
-            numOfCoaddedImages = coadd_images(self.darkCleanImages, self.filtName)
-        self.rightPanel.update_message("Images summed", "%i" % numOfCoaddedImages)
+            self.numOfCoaddedImages = coadd_images(self.darkCleanImages, self.filtName)
+        self.rightPanel.update_message("Images summed", "%i" % self.numOfCoaddedImages)
 
 
         # Subtract background
@@ -301,7 +333,9 @@ class MainApplication(Tk.Frame):
             objSn, objMag, objMagSigma, stSn = get_photometry(self.seCat, self.ref, self.filtName, aperRadius,
                                                               self.biasValue, self.darkValue, backData)
             self.rightPanel.show_photometry_data(objSn, objMag, objMagSigma, stSn)
-            self.magData.append((numOfCoaddedImages, objMag))
+            self.magData.append((self.numOfCoaddedImages, objMag))
+            # store magnitude value to a photomerty log
+            self.photoLog["%s:%s"%(self.objName,self.addString)][self.filtName]=objMag
 
         elif self.polarMode:
             objSn, objPairSn, stSn, fluxRatios = get_photometry_polar_mode(self.seCatPolar, self.ref, aperRadius,
