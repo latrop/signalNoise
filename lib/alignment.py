@@ -64,9 +64,10 @@ class Reference(object):
                     self.load_coord_mags(nRef)
                 return
         # If we run out of reference files, but proper match was not
-        # found, then just return nil transform and hope that
-        # the situation will improve with additional observed files
-        self.transform = None
+        # found, then we can use the last good transformation (obtained
+        # from prevous file set of in different filter). If there was
+        # not previous good transformation, then the algorithm
+        # will use default (None) transformation and do nothing
         print "not ok"
             
     def apply_transform(self):
