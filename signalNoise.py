@@ -135,7 +135,12 @@ class MainApplication(Tk.Frame):
         self.currentObject = self.objName
         self.currentAddString = self.addString
         self.ref = Reference(self.objName)
-        self.photoLog["%s:%s"%(self.objName,self.addString)] = {}
+        objStr = "%s:%s"%(self.objName,self.addString)
+        if objStr not in self.photoLog:
+            # we only want to add a new object if there is no such
+            # object in the dictionary. Otherwise it will erase log data
+            # for the current onject if "reset" was called by user.
+            self.photoLog[objStr] = {}
 
         # Clear working directory
         for f in glob.glob(path.join("workDir", "*")):
