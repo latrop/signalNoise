@@ -118,7 +118,14 @@ class MainApplication(Tk.Frame):
         else:
             self.polarMode = False
 
+    def clean_work_dir(self):
+        for fName in glob.glob(path.join("workDir", "%s*_affineremap.fits" % self.currentObject)):
+            os.remove(fName)
+        for fName in glob.glob(path.join("workDir", "%s*.FIT" % self.currentObject)):
+            os.remove(fName)
+
     def reset_new_filter(self):
+        self.clean_work_dir()
         self.rawImages = []
         self.darkCleanImages = []
         self.magData = []
@@ -135,7 +142,12 @@ class MainApplication(Tk.Frame):
         self.currentObject = self.objName
         self.currentAddString = self.addString
         self.ref = Reference(self.objName)
-        self.photoLog["%s:%s"%(self.objName,self.addString)] = {}
+        objStr = "%s:%s"%(self.objName,self.addString)
+        if objStr not in self.photoLog:
+            # we only want to add a new object if there is no such
+            # object in the dictionary. Otherwise it will erase log data
+            # for the current onject if "reset" was called by user.
+            self.photoLog[objStr] = {}
 
         # Clear working directory
         for f in glob.glob(path.join("workDir", "*")):
@@ -173,7 +185,7 @@ class MainApplication(Tk.Frame):
         """ This is the main function. It is been
         called as soon as the object is selected."""
         if self.filtName != self.currentFilter:
-            # new filter being processed
+            # new filter is being processed
             self.reset_new_filter()
 
         if (self.objName != self.currentObject) or (self.addString != self.currentAddString):
@@ -204,12 +216,13 @@ class MainApplication(Tk.Frame):
         # Create the list of images to be processed
         newRawImages = []
         for img in sorted(glob.glob(path.join(self.dirName, "%s%s%s*" % (self.objName, self.addString, self.filtName)))):
-            if not img in self.rawImages:
+            if img not in self.rawImages:
                 newRawImages.append(img)
         if (len(newRawImages) == 0) and (not imageWasRemoved):
             print "no new images"
             return
         self.rawImages.extend(newRawImages)
+        print(self.rawImages)
 
         # Check if filter name is equal to filter in file name
         if not self.filterChecked:

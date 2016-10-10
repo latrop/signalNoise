@@ -14,46 +14,62 @@ class Reference(object):
     coordinates of object and standart stars
     within this image"""
     def __init__(self, objName):
-        self.refImage = path.join("references", objName, "ref.cat")
-        dataFile = path.join("references", objName, "coords.dat")
-        self.standarts = []
+        """
+        There can be more than one reference file for a given object.
+        So the strategy is to try different references untill good match
+        obtained and then use correspondent coords.dat file.
+        """
+        self.refImages = sorted(glob.glob(path.join("references", objName, "ref*.cat")))
+        self.coordMagDataFiles = sorted(glob.glob(path.join("references", objName, "coords*.dat")))
         self.transform = None
-        if (path.exists(self.refImage)) and (path.exists(dataFile)):
-            for line in open(dataFile):
-                if line.strip().startswith("#"):
-                    continue
-                name = line.split()[0]
-                xCen = float(line.split()[1])
-                yCen = float(line.split()[2])
-                if name == "obj":  # coordinates of object
-                    self.xObj = xCen
-                    self.yObj = yCen
-                    self.objSEParams = None
-                elif name.startswith("st"):
-                    magb = line.split()[3]
-                    if "-" not in magb:
-                        magb = float(magb)
-                    else:
-                        magb = None
-                    magv = line.split()[4]
-                    if "-" not in magv:
-                        magv = float(magv)
-                    else:
-                        magv = None
-                    magr = line.split()[5]
-                    if "-" not in magr:
-                        magr = float(magr)
-                    else:
-                        magr = None
-                    magi = line.split()[6]
-                    if "-" not in magi:
-                        magi = float(magi)
-                    else:
-                        magi = None
+        self.standarts = []
 
-                    self.standarts.append({"name": name, "xCen": xCen, "yCen": yCen, "magb": magb,
-                                           "magv": magv, "magr": magr, "magi": magi})
+        
+    def load_coord_mags(self, nRef):
+        """
+        Function loads reference coordinates and magnitudes from
+        coords.dat file that corresponds to a successful reference.
+        nRef is the ordinal number of this successful reference.
+        """
+        for line in open(self.coordMagDataFiles[nRef]):
+            if line.strip().startswith("#"):
+                continue
+            name = line.split()[0]
+            xCen = float(line.split()[1])
+            yCen = float(line.split()[2])
+            if name == "obj":  # coordinates of object
+                self.xObj = xCen
+                self.yObj = yCen
+                self.objSEParams = None
+            elif name.startswith("st"):
+                self.standarts.append({"name": name, "xCen": xCen, "yCen": yCen})
+                for i, filt in enumerate("bvri"):
+                    # load magnitudes of standarts
+                    magStr = line.split()[i+3]
+                    magVal = float(magStr) if "-" not in magStr else None
+                    self.standarts[-1]["mag%s" % filt] = magVal
 
+    def find_shift(self, observedImage, polarMode):
+        if not path.exists(observedImage):
+            print "%s not found!" % (observedImage)
+            return
+        for nRef, refImage in enumerate(self.refImages):
+            # Here we try different references to find the
+            # one that matches
+            ident = alipy.ident.run(refImage, [observedImage], visu=False, verbose=True, polarMode=polarMode)
+            if (ident is not None) and (ident[0].ok is True):
+                # Good reference is found
+                self.transform = ident[0].trans
+                if not self.standarts:
+                    self.load_coord_mags(nRef)
+                return
+        # If we run out of reference files, but proper match was not
+        # found, then we can use the last good transformation (obtained
+        # from prevous file set of in different filter). If there was
+        # not previous good transformation, then the algorithm
+        # will use default (None) transformation and do nothing
+        print "not ok"
+            
     def apply_transform(self):
         """ Function finds coordinates of object and standarts
         on the observed image"""
@@ -72,26 +88,8 @@ class Reference(object):
             xi = st["xCen"]-translationVector[0]
             yi = st["yCen"]-translationVector[1]
             x, y = numpy.dot((xi, yi), scaleRotMatrix)
-            self.standartsObs.append({"name": st['name'], "xCen": x, "yCen": y})
-
-
-    def find_shift(self, observedImage, polarMode):
-        if not path.exists(observedImage):
-            print "%s not found!" % (observedImage)
-            return
-        if not path.exists(self.refImage):
-            print "%s not found!" % (self.refImage)
-            return
-        ident = alipy.ident.run(self.refImage, [observedImage], visu=False, verbose=True, polarMode=polarMode)
-        if ident is None:
-            print "not ok"
-            self.transform = None
-        if ident[0].ok is True:
-            self.transform = ident[0].trans
-        else:
-            print "not ok"
-            self.transform = None
-
+            self.standartsObs.append({"name": st['name'], "xCen": x, "yCen": y})            
+            
     def match_objects(self, observedImage, catalogue, polarMode=None, matchOnly=False):
         # Let's find where on the observed image objects should
         # be according to reference image using affine transform
