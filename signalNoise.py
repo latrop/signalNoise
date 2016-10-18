@@ -66,7 +66,7 @@ class MainApplication(Tk.Frame):
         for filt in 'bvriXY':
             pathToFlat = path.join("tmp2", "flats", "ff%s.fts" % (filt))  # FIXME
             hdu = pyfits.open(pathToFlat)
-            fData = hdu[0].data
+            fData = np.flipud(hdu[0].data)
             self.flats[filt.lower()] = fData / np.mean(fData)
             hdu.close()
         # GUI stuff:
