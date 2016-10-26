@@ -28,7 +28,10 @@ from numpy import genfromtxt, argsort
 
 def _setup_img(image, name):
     if not type(image) == type(''):
-        import pyfits
+        try:
+            import pyfits
+        except ImportError:
+            from astropy.io import fits as pyfits
         pyfits.writeto(name, image)
         
 
@@ -172,12 +175,19 @@ def run(image='', imageref='', params=[], conf_file=None, conf_args={}, keepcat=
     else: verbose = True 
     _cleanup()
     if (not type(image) == type(''))  and (not type(image) == type(u'')):
-        import pyfits
+        try:
+            import pyfits
+        except ImportError:
+            from astropy.io import fits as pyfits
         im_name = 'alipysex.fits'
         pyfits.writeto(im_name, image.transpose())
     else: im_name = image
     if (not type(imageref) == type('')) and (not type(imageref) == type(u'')):
-        import pyfits
+        try:
+            import pyfits
+        except ImportError:
+            from astropy.io import fits as pyfits
+
         imref_name = 'alipysex.ref.fits'
         pyfits.writeto(imref_name, imageref.transpose())
     else: imref_name = imageref

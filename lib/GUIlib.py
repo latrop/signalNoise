@@ -11,7 +11,10 @@ import tkFont
 import tkFileDialog, tkMessageBox
 from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg, NavigationToolbar2TkAgg
 import pylab
-import pyfits
+try:
+    import pyfits
+except ImportError:
+    from astropy.io import fits as pyfits
 import numpy as np
 from scipy.spatial import cKDTree
 

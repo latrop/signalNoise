@@ -8,8 +8,10 @@ from os import path
 from os import remove
 import numpy as np
 
-import pyfits
-
+try:
+    import pyfits
+except ImportError:
+    from astropy.io import fits as pyfits
 
 class SExCatalogue(object):
     def __init__(self, catFileName):

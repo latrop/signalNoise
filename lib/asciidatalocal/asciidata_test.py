@@ -1646,7 +1646,10 @@ class Test_AsciiFits(unittest.TestCase):
         """
         import string
         import tempfile
-        import pyfits
+        try:
+            import pyfits
+        except ImportError:
+            from astropy.io import fits as pyfits
 
         # write the AsciiData instance to a fits file
         fits_name = self.tdata.writetofits()

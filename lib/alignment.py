@@ -5,7 +5,11 @@ from os import path
 from os import remove
 
 import numpy
-import pyfits
+try:
+    import pyfits
+except ImportError:
+    from astropy.io import fits as pyfits
+
 import alipylocal as alipy
 
 

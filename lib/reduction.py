@@ -5,8 +5,12 @@ import os
 from os import path
 import numpy as np
 import time
-import pyfits
+try:
+    import pyfits
+except ImportError:
+    from astropy.io import fits as pyfits
 
+    
 def make_master_dark(pathToDir): # TODO What if no dark files found?
     """ Creates median of three newest darks in
     given directory"""

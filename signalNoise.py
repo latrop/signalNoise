@@ -12,8 +12,11 @@ from collections import OrderedDict
 
 import pylab
 
-import pyfits
-
+try:
+    import pyfits
+except ImportError:
+    from astropy.io import fits as pyfits
+    
 if os.name == "nt":
     import winsound
 

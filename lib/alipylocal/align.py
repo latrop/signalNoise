@@ -3,7 +3,10 @@ import os
 import numpy as np
 import math
 import scipy.ndimage
-import pyfits
+try:
+        import pyfits
+except ImportError:
+        from astropy.io import fits as pyfits
 import csv
 
 
