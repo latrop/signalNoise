@@ -145,6 +145,9 @@ class MainApplication(Tk.Frame):
         self.currentObject = self.objName
         self.currentAddString = self.addString
         self.ref = Reference(self.objName)
+        self.masterDarkData, darkNumber = make_master_dark(self.dirName)
+        self.rightPanel.update_message("Dark", "Number %s" % darkNumber)
+        self.masterBiasData = make_master_bias(self.dirName)
         objStr = "%s:%s"%(self.objName,self.addString)
         if objStr not in self.photoLog:
             # we only want to add a new object if there is no such
@@ -262,11 +265,12 @@ class MainApplication(Tk.Frame):
         # Subtract bias and dark files
         if newRawImages:
             newCleanImages, self.biasValue, self.darkValue = fix_for_bias_dark_and_flat(self.dirName, newRawImages,
+                                                                                        self.masterDarkData,
+                                                                                        self.masterBiasData,
                                                                                         self.flats[self.filtName.lower()])
             if not newCleanImages:
                 return
             self.darkCleanImages.extend(newCleanImages)
-            self.rightPanel.update_message("Bias and dark", "Ok")
 
         # Coadd images
         if not self.polarMode:
