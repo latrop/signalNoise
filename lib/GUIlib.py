@@ -40,12 +40,22 @@ class MenuBar(Tk.Frame):
         self.backMenu.add_radiobutton(label="LOCAL", variable=self.backTypeVar)
         self.menubar.add_cascade(label="Background", menu=self.backMenu)
 
+        # show menu
+        self.showMenu = Tk.Menu(self.menubar, tearoff=0)
+        self.showMenu.add_checkbutton(label="Hot pixels", onvalue=True,
+                                      offvalue=False, variable=self.window.showHotPixels)
+        self.menubar.add_cascade(label="Show", menu=self.showMenu)
+
+        # Alarm menu button
         self.menubar.add_command(label="Alarm", command=self.set_alarm)
 
+        # Polar check menu button
         self.menubar.add_command(label="PolarCheck", command=self.polar_check)
 
+        # Log menu button
         self.menubar.add_command(label="Log", command=self.show_log)
 
+        # Quit
         self.menubar.add_command(label="Quit", command=self.window.on_closing)
         self.window.root.config(menu=self.menubar)
 
@@ -106,6 +116,7 @@ class ImagPanel(Tk.Frame):
         self.standartsPlotIntance = []
         self.objPairPlotInstance = None
         self.standartsPairPlotInstance = []
+        self.hotPixelsPlotInstance = []
 
         # self.toolbar = NavigationToolbar2TkAgg(self.canvas, self.window.root)
         # self.toolbar.update()
@@ -127,6 +138,10 @@ class ImagPanel(Tk.Frame):
             for plotInstance in self.standartsPairPlotInstance:
                 plotInstance.remove()
             self.standartsPairPlotInstance = []
+        if self.hotPixelsPlotInstance:
+            for plotInstance in self.hotPixelsPlotInstance:
+                plotInstance.remove()
+            self.hotPixelsPlotInstance = []
         if upDateFigure:
             self.canvas.show()
 
@@ -147,7 +162,7 @@ class ImagPanel(Tk.Frame):
         self.canvas.show()
         #self.canvas.get_tk_widget().pack(side=Tk.LEFT, fill=Tk.BOTH, expand=1)
 
-    def plot_objects(self, reference, polarMode=None):
+    def plot_objects(self, reference, polarMode=None, hotPixels=[]):
         self.remove_objects_from_plot()
         if not reference.objSEParams is None:
             self.objPlotInstance = self.fig.plot([reference.objSEParams["X_IMAGE"]-1], [reference.objSEParams["Y_IMAGE"]-1],
@@ -195,6 +210,12 @@ class ImagPanel(Tk.Frame):
                 self.standartsPairPlotInstance.append(self.fig.plot([stx], [sty], marker="o", markerfacecolor="none",
                                                                     linestyle="", markersize=15, markeredgewidth=2,
                                                                     markeredgecolor="g")[0])
+
+        # plot hot pixels
+        if self.window.showHotPixels.get():
+            self.hotPixelsPlotInstance.append(self.fig.plot(hotPixels[1], hotPixels[0], marker="x", markersize=5,
+                                                            markeredgecolor="b", markerfacecolor="b",
+                                                            markeredgewidth=1, linestyle="")[0])
         self.canvas.show()
 
 

@@ -75,11 +75,12 @@ class MainApplication(Tk.Frame):
         # GUI stuff:
         self.root = Tk.Tk()
         self.root.title("SignalNoise")
-#        self.root.geometry(("800x625"))
         self.root.protocol('WM_DELETE_WINDOW', self.on_closing)
+        self.showHotPixels = Tk.BooleanVar()
+        self.showHotPixels.set(False)
+        self.showHotPixels.trace("w", lambda a,b,c: self.update_plot())
         self.menubar = MenuBar(self)
         self.imagPanel = ImagPanel(self)
-        # self.graphPanel = GraphPanel(self)
         self.rightPanel = RightPanel(self)
         self.root.mainloop()
 
@@ -145,7 +146,7 @@ class MainApplication(Tk.Frame):
         self.currentObject = self.objName
         self.currentAddString = self.addString
         self.ref = Reference(self.objName)
-        self.masterDarkData, darkNumber = make_master_dark(self.dirName)
+        self.masterDarkData, darkNumber, self.hotPixels = make_master_dark(self.dirName)
         self.rightPanel.update_message("Dark", "Number %s" % darkNumber)
         self.masterBiasData = make_master_bias(self.dirName)
         objStr = "%s:%s"%(self.objName,self.addString)
@@ -185,6 +186,10 @@ class MainApplication(Tk.Frame):
             move(fName, path.join(self.dirName, fNameNoPath))
         os.rmdir(tmpDir)
         return nexp
+
+
+    def update_plot(self):
+        self.imagPanel.plot_objects(self.ref, self.polarMode, self.hotPixels)
                            
 
     def run_computation(self):
@@ -345,7 +350,7 @@ class MainApplication(Tk.Frame):
             return
         else:
             self.rightPanel.update_message("Error", "")
-        self.imagPanel.plot_objects(self.ref, self.polarMode)
+        self.update_plot()
 
         # make aperture photometry of object and standarts
         snValues = {}

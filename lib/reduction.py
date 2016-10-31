@@ -17,6 +17,7 @@ def make_master_dark(pathToDir): # TODO What if no dark files found?
     outPath = path.join("workDir", "master_dark.fits")
     allDarks = glob.glob(path.join(pathToDir, "dark*.FIT"))
     lastDarks = sorted(allDarks, key=path.getctime)[-3:]
+    darkNumber = path.split(lastDarks[0])[-1][4:-7]
     if (not path.exists(outPath)) or (path.getctime(outPath)<path.getctime(lastDarks[0])):
         # if there is no master dark at all or there are newer dark frames
         # we need to create a new one
@@ -25,12 +26,13 @@ def make_master_dark(pathToDir): # TODO What if no dark files found?
         if path.exists(outPath):
             os.remove(outPath)
         masterDarkHDU.writeto(outPath)
-        darkNumber = path.split(lastDarks[0])[-1][4:-7]
     else:
         # else hust use existing master dark
         masterDarkData = pyfits.open(outPath)[0].data.copy()
-
-    return masterDarkData, darkNumber
+    medianDarkValue = np.median(masterDarkData)
+    stdDarkValue = np.std(masterDarkData)
+    hotPixels = np.where(np.abs(masterDarkData-medianDarkValue)>stdDarkValue*10)
+    return masterDarkData, darkNumber, hotPixels
 
 
 def make_master_bias(pathToDir): # the same quesion
