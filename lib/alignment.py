@@ -142,10 +142,7 @@ class Reference(object):
                                               "xCen": x, "yCen": y})
 
     def get_standatds_fwhm(self):
-        fwhms = []
-        for st in self.standartsObs:
-            if st["seParams"] is not None:
-                fwhms.append(st["seParams"]["FWHM_IMAGE"])
+        fwhms = [st["seParams"]["FWHM_IMAGE"] for st in self.standartsObs if st["seParams"] is not None]
         return numpy.mean(fwhms)
 
 
@@ -170,7 +167,7 @@ def coadd_images(imageList, polarMode):
             # add it to imagesToCoadd list
             imagesToCoadd.append(pathToFile)
     # Shifting should be done only if there is new images:
-    if len(imagesToAlign) > 0:
+    if imagesToAlign:
         print ("%s" % str(polarMode)) * 10
         identifications = alipy.ident.run(refImage, imagesToAlign, visu=False, verbose=True, r=10.0,
                                           polarMode=polarMode, refpolar=True)
@@ -206,8 +203,6 @@ def coadd_images(imageList, polarMode):
     # save summed data to summed.fits file
     outHdu = pyfits.PrimaryHDU(data=data)
     pathToFile = path.join("workDir", "summed.fits")
-    if path.exists(pathToFile):
-        remove(pathToFile)
-    outHdu.writeto(pathToFile)
+    outHdu.writeto(pathToFile, clobber=True)
     return len(imagesToCoadd)
 

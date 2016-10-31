@@ -59,19 +59,6 @@ class MenuBar(Tk.Frame):
         self.menubar.add_command(label="Quit", command=self.window.on_closing)
         self.window.root.config(menu=self.menubar)
 
-    # def select_object(self):
-    #     fileName = tkFileDialog.askopenfilename(parent=self.window.root,
-    #                                             filetypes=[("FITS files", "*.FIT")],
-    #                                             title="Open file to load parameters")
-    #     # For some reason tkFileDialog returns path in POSIX
-    #     # format even in NT system, so we have to fix it
-    #     fileName = path.normpath(fileName)
-    #     dirPath = path.dirname(fileName)
-    #     fNameWithoutPath = path.basename(fileName)
-    #     objName, filtName, addString = parse_object_file_name(fNameWithoutPath)
-    #     self.window.rightPanel.update_object_info(objName, filtName, addString)
-    #     self.window.run_computation(dirPath, objName, filtName, addString)
-
     def select_folder(self):
         # Find newest directory in telescopedata as an initial dir
         if os.name == "nt":
@@ -127,21 +114,15 @@ class ImagPanel(Tk.Frame):
         if self.objPlotInstance:
             self.objPlotInstance.remove()
             self.objPlotInstance = None
-        if len(self.standartsPlotIntance) > 0:
-            for plotInstance in self.standartsPlotIntance:
-                plotInstance.remove()
-            self.standartsPlotIntance = []
+        while self.standartsPlotIntance:
+            self.standartsPlotIntance.pop().remove()
         if self.objPairPlotInstance:
             self.objPairPlotInstance.remove()
             self.objPairPlotInstance = None
-        if len(self.standartsPairPlotInstance) > 0:
-            for plotInstance in self.standartsPairPlotInstance:
-                plotInstance.remove()
-            self.standartsPairPlotInstance = []
-        if self.hotPixelsPlotInstance:
-            for plotInstance in self.hotPixelsPlotInstance:
-                plotInstance.remove()
-            self.hotPixelsPlotInstance = []
+        while self.standartsPairPlotInstance:
+            self.standartsPairPlotInstance.pop().remove()
+        while self.hotPixelsPlotInstance:
+            self.hotPixelsPlotInstance.pop().remove()
         if upDateFigure:
             self.canvas.show()
 
@@ -216,36 +197,6 @@ class ImagPanel(Tk.Frame):
             self.hotPixelsPlotInstance.append(self.fig.plot(hotPixels[1], hotPixels[0], marker="x", markersize=5,
                                                             markeredgecolor="b", markerfacecolor="b",
                                                             markeredgewidth=1, linestyle="")[0])
-        self.canvas.show()
-
-
-class GraphPanel(Tk.Frame):
-    def __init__(self, window):
-        self.window = window
-        self.mainGraph = pylab.Figure(figsize=(6, 2), dpi=100)
-        self.canvas = FigureCanvasTkAgg(self.mainGraph, master=self.window.root)
-        self.fig = self.mainGraph.add_subplot(111)
-        self.mainGraph.tight_layout()
-        self.graphInstance = None
-        self.canvas.show()
-        self.canvas.get_tk_widget().grid(column=0, row=1) #pack(side=Tk.BOTTOM)
-
-    def remove_objects_from_plot(self, upDateFigure=False):
-        if self.graphInstance:
-            self.graphInstance.remove()
-            self.graphInstance = None
-            if upDateFigure:
-                self.canvas.show()
-            
-    def plot_magnitude(self, magData):
-        self.remove_objects_from_plot()
-        x = [m[0] for m in magData]
-        y = [m[1] for m in magData]
-        mVal = np.mean(y)
-        self.fig.axis([x[0]-0.5, x[-1]+0.5, mVal-0.1, mVal+0.1])
-        self.graphInstance = self.fig.plot(x, y, "bo", linestyle="-", color="b")[0]
-        self.fig.axes.set_xticks([int(i) for i in x])
-        self.mainGraph.tight_layout()
         self.canvas.show()
 
 
@@ -337,7 +288,7 @@ class RightPanel(Tk.Frame):
         self.photometryString.set(string)
 
     def update_bad_images_info(self, badImagesList):
-        if len(badImagesList) > 0:
+        if badImagesList:
             string = "\nBad images:\n"
             string += "\n".join(badImagesList)
         else:

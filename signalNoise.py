@@ -64,6 +64,10 @@ class MainApplication(Tk.Frame):
         # check if there is the working directory and create if nessesary
         if not path.exists("workDir"):
             os.mkdir("workDir")
+        else:
+            # cleanup working directory
+            for f in glob.glob(path.join("workDir", "*.*")):
+                os.remove(f)
         # cache flats
         self.flats = {}
         for filt in 'bvriXY':
@@ -379,5 +383,4 @@ class MainApplication(Tk.Frame):
         return
 
 
-[os.remove(f) for f in glob.glob(path.join("workDir", "*.*"))]
 MainApplication()

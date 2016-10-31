@@ -108,7 +108,7 @@ def get_photometry(cat, ref, filtName, aperRadius, biasValue, darkValue, backDat
         pValue = pi*aperRadius**2*(backData[int(yCenSt), int(xCenSt)] + darkValue + biasValue**2.0)
         snValue = fluxAper1 / (fluxAper1+pValue)**0.5
         stSn[st['name']] = snValue
-        if not st["mag%s"%filtName.lower()] is None:
+        if st["mag%s"%filtName.lower()] is not None:
             magzpt = 2.5*log10(fluxAper1) + st["mag%s"%filtName.lower()]
             fluxzpt.append(10**(0.4*(30.0-magzpt)))
 
@@ -122,7 +122,7 @@ def get_photometry(cat, ref, filtName, aperRadius, biasValue, darkValue, backDat
     objFluxAper1 = objPhotParams["FLUX_APER"]
     pValue = pi*aperRadius**2*(backData[int(yCen), int(xCen)] + darkValue + biasValue**2.0)
     objSn = objFluxAper1 / (objFluxAper1+pValue)**0.5
-    if not st["mag%s"%filtName.lower()] is None:
+    if st["mag%s"%filtName.lower()] is not None:
         meanZpt = 30 - 2.5*log10(np.mean(fluxzpt))
         objMag = -2.5*log10(objFluxAper1)+meanZpt
         objMagSigma = 1.0857 / objSn
@@ -137,7 +137,7 @@ def get_photometry_polar_mode(cat, ref, aperRadius, biasValue, darkValue, backDa
     # we are not going to compute any magnitudes in polar mode
     # 1) find sn ratios for object pair
     fluxRatios = {}
-    if not ref.objSEParams is None:
+    if ref.objSEParams is not None:
         xObjCen = ref.objSEParams["X_IMAGE"]
         yObjCen = ref.objSEParams["Y_IMAGE"]
         objPhotParams = cat.find_nearest(xObjCen, yObjCen)
