@@ -63,7 +63,7 @@ class Reference(object):
             ident = alipy.ident.run(refImage, [observedImage], visu=False, verbose=True, polarMode=polarMode)
             if (ident is not None) and (ident[0].ok is True):
                 # Good reference is found
-                self.transform = ident[0].trans
+                self.transform = ident[0].trans.inverse()
                 if not self.standarts:
                     self.load_coord_mags(nRef)
                 return
@@ -77,21 +77,12 @@ class Reference(object):
     def apply_transform(self):
         """ Function finds coordinates of object and standarts
         on the observed image"""
-        matTransform = self.transform.matrixform()
-        scaleRotMatrix = matTransform[0]
-        translationVector = matTransform[1]
-        # x' = x*A + b:
-        # find coordinates of the object
-        xi = self.xObj-translationVector[0]
-        yi = self.yObj-translationVector[1]
-        self.xObjObs, self.yObjObs = numpy.dot((xi, yi), scaleRotMatrix)
+        self.xObjObs, self.yObjObs = self.transform.apply((self.xObj, self.yObj))
 
         # find coordinates of standarts
         self.standartsObs = []
         for st in self.standarts:
-            xi = st["xCen"]-translationVector[0]
-            yi = st["yCen"]-translationVector[1]
-            x, y = numpy.dot((xi, yi), scaleRotMatrix)
+            x, y = self.transform.apply((st["xCen"], st["yCen"]))
             self.standartsObs.append({"name": st['name'], "xCen": x, "yCen": y})            
             
     def match_objects(self, observedImage, catalogue, polarMode=None, matchOnly=False):
