@@ -183,8 +183,8 @@ def get_photometry_polar_mode(cat, ref, aperRadius, biasValue, darkValue, backDa
         if not stPair["seParams"] is None:
             stPairFluxAuto = stPair["seParams"]["FLUX_AUTO"]
             stPairFluxAper1 = stPair["seParams"]["FLUX_APER"]
-            xCenSt = st["seParams"]["X_IMAGE"]
-            yCenSt = st["seParams"]["Y_IMAGE"]
+            xCenSt = stPair["seParams"]["X_IMAGE"]
+            yCenSt = stPair["seParams"]["Y_IMAGE"]
             pValue = pi*aperRadius**2*(backData[int(yCenSt), int(xCenSt)] + darkValue + biasValue**2.0)
             stPairSN = stPairFluxAper1/(stPairFluxAper1+pValue)**0.5
         else:
