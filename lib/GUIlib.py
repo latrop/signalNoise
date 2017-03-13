@@ -554,6 +554,8 @@ class LogWindow(Tk.Frame):
                 logString = "%s:  " % (objName)
             for filtName in "bvri":
                 if filtName in window.photoLog[key]:
-                    logString += "M_%s=%1.2f  " % (filtName, window.photoLog[key][filtName])
+                    magValue = window.photoLog[key][filtName]
+                    if magValue is not None:
+                        logString += "M_%s=%1.2f  " % (filtName, magValue)
             logString += "\n"
             self.textFrame.insert(Tk.END, logString)
