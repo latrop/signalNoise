@@ -21,12 +21,12 @@ def make_master_dark(pathToDir): # TODO What if no dark files found?
     if (not path.exists(outPath)) or (path.getctime(outPath)<path.getctime(lastDarks[0])):
         # if there is no master dark at all or there are newer dark frames
         # we need to create a new one
-        masterDarkData = np.median([pyfits.open(fName)[0].data for fName in lastDarks], axis=0)
+        masterDarkData = np.median([safe_open_fits(fName)[0].data for fName in lastDarks], axis=0)
         masterDarkHDU =pyfits.PrimaryHDU(data = masterDarkData)
         masterDarkHDU.writeto(outPath, clobber=True)
     else:
         # else hust use existing master dark
-        masterDarkData = pyfits.open(outPath)[0].data.copy()
+        masterDarkData = safe_open_fits(outPath)[0].data.copy()
     medianDarkValue = np.median(masterDarkData)
     stdDarkValue = np.std(masterDarkData)
     hotPixels = np.where(np.abs(masterDarkData-medianDarkValue)>stdDarkValue*10)
@@ -38,11 +38,11 @@ def make_master_bias(pathToDir): # the same quesion
     outPath = path.join("workDir", "master_bias.fits")
     if not path.exists(outPath):
         allBiases = glob.glob(path.join(pathToDir, "bias*.FIT"))
-        masterBiasData = np.median([pyfits.open(fName)[0].data for fName in allBiases], axis=0)
+        masterBiasData = np.median([safe_open_fits(fName)[0].data for fName in allBiases], axis=0)
         masterBiasHDU =pyfits.PrimaryHDU(data = masterBiasData)
         masterBiasHDU.writeto(outPath, clobber=True)
     else:
-        masterBiasData = pyfits.open(outPath)[0].data.copy()
+        masterBiasData = safe_open_fits(outPath)[0].data.copy()
     return masterBiasData
 
 
