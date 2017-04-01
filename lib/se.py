@@ -43,7 +43,7 @@ class SExCatalogue(object):
         """ Returns nearest object to given coordinates"""
         nearest = min(self.objectList, key=lambda obj: hypot(x-obj["X_IMAGE"], y-obj["Y_IMAGE"]))
         dist = hypot(x-nearest["X_IMAGE"], y-nearest["Y_IMAGE"])
-        if dist < 4.0:
+        if (dist < 4.0) and (nearest["FLUX_APER"] > 0.0):
             return nearest
         else:
             return None
@@ -108,7 +108,7 @@ def get_photometry(cat, ref, filtName, aperRadius, biasValue, darkValue, backDat
         pValue = pi*aperRadius**2*(backData[int(yCenSt), int(xCenSt)] + darkValue + biasValue**2.0)
         snValue = fluxAper1 / (fluxAper1+pValue)**0.5
         stSn[st['name']] = snValue
-        if st["mag%s"%filtName.lower()] is not None:
+        if (st["mag%s"%filtName.lower()] is not None):
             magzpt = 2.5*log10(fluxAper1) + st["mag%s"%filtName.lower()]
             fluxzpt.append(10**(0.4*(30.0-magzpt)))
 
