@@ -67,7 +67,12 @@ class MainApplication(Tk.Frame):
         else:
             # cleanup working directory
             for f in glob.glob(path.join("workDir", "*.*")):
-                os.remove(f)
+                try:
+                    # File can be protected from removing (for example if it is
+                    # opened by another application)
+                    os.remove(f)
+                except:
+                    pass
         # cache flats
         self.flats = {}
         for filt in 'bvriXY':
