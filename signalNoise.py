@@ -315,8 +315,8 @@ class MainApplication(Tk.Frame):
             medianFWHM = self.seCat.get_median_value("FWHM_IMAGE")
 
             # Now we want to run SExtractor once again to get fluxes in
-            # circular apertures of 1.55*FWHM and 1.55*sqrt(2)*FWHM radii
-            aperRadius = 2*(1.55*medianFWHM+1)
+            # circular apertures of 1.55*FWHM 
+            aperRadius = 1.55*medianFWHM+1
             addString = "-PHOT_APERTURES %1.2f " % (2*aperRadius)
             addString += "-BACKPHOTO_TYPE %s" % (self.menubar.backTypeVar.get())
             call_SE(summedFile, catNamePolar, addString=addString)
@@ -339,8 +339,8 @@ class MainApplication(Tk.Frame):
                 print meanFWHM
 
                 # Now we want to run SExtractor once again to get fluxes in
-                # circular apertures of 1.55*FWHM and 1.55*sqrt(2)*FWHM radii
-                aperRadius = (1.55*meanFWHM+1)
+                # circular apertures of 1.55*FWHM+1 radii
+                aperRadius = 1.55*meanFWHM+1
                 addString = "-PHOT_APERTURES %1.2f " % (2*aperRadius)
                 addString += "-BACKPHOTO_TYPE %s" % (self.menubar.backTypeVar.get())
                 call_SE(summedFile, catName, addString=addString)
