@@ -28,6 +28,17 @@ class Reference(object):
         self.transform = None
         self.standarts = []
 
+        # Check if there are aperture settings
+        aperPath = path.join("references", objName, "aperture.dat")
+        if path.exists(aperPath):
+            aperFile = open(aperPath)
+            aperData = aperFile.readlines()[0]
+            self.apertureSize = float(aperData.split()[1])
+            aperFile.close()
+            print "+++++++ aperture = %1.1f" % self.apertureSize
+        else:
+            self.apertureSize = None
+
         
     def load_coord_mags(self, nRef):
         """
