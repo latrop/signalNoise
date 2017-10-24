@@ -305,18 +305,24 @@ class MainApplication(Tk.Frame):
         if self.polarMode:
             # in polar mode we have two catalogues: polar and filtred one.
             catNamePolar = path.join("workDir", "field_polar.cat")
-            call_SE(summedFile, catNamePolar,
-                    addString = "-BACKPHOTO_TYPE %s" % (self.menubar.backTypeVar.get()))
-            filterPolCat(catNamePolar, catName, self.filtName)
-            self.seCatPolar = SExCatalogue(catNamePolar)
-            self.seCat = SExCatalogue(catName)
+            # if there is no given aperture size, we need to run the SExtractor twice:
+            # one time to find FWHM and compute aperture, and one time to compute acutal
+            # fluxes with this aperture
+            if self.ref.apertureSize is None:
+                call_SE(summedFile, catNamePolar,
+                        addString = "-BACKPHOTO_TYPE %s" % (self.menubar.backTypeVar.get()))
+                filterPolCat(catNamePolar, catName, self.filtName)
+                self.seCatPolar = SExCatalogue(catNamePolar)
+                self.seCat = SExCatalogue(catName)
 
-            # Find median FWHM of the image
-            medianFWHM = self.seCat.get_median_value("FWHM_IMAGE")
+                # Find median FWHM of the image
+                medianFWHM = self.seCat.get_median_value("FWHM_IMAGE")
 
-            # Now we want to run SExtractor once again to get fluxes in
-            # circular apertures of 1.55*FWHM 
-            aperRadius = 1.55*medianFWHM+1
+                # Now we want to run SExtractor once again to get fluxes in
+                # circular apertures of 1.55*FWHM 
+                aperRadius = 1.55*medianFWHM+1
+            else:
+                aperRadius = self.ref.apertureSize
             addString = "-PHOT_APERTURES %1.2f " % (2*aperRadius)
             addString += "-BACKPHOTO_TYPE %s" % (self.menubar.backTypeVar.get())
             call_SE(summedFile, catNamePolar, addString=addString)
@@ -338,9 +344,14 @@ class MainApplication(Tk.Frame):
                 meanFWHM = self.ref.get_standatds_fwhm()
                 print meanFWHM
 
-                # Now we want to run SExtractor once again to get fluxes in
-                # circular apertures of 1.55*FWHM+1 radii
-                aperRadius = 1.55*meanFWHM+1
+                if self.ref.apertureSize is None:
+                    # if the aperture size is not given, we want to compute one
+                    print "using 1.55*FWHM+1 rule to compute an aperture"
+                    aperRadius = 1.55*meanFWHM+1
+                else:
+                    print "++++++++ using given aperture"
+                    aperRadius = self.ref.apertureSize
+                # Now we want to run SExtractor once again to get fluxes in circular apertures
                 addString = "-PHOT_APERTURES %1.2f " % (2*aperRadius)
                 addString += "-BACKPHOTO_TYPE %s" % (self.menubar.backTypeVar.get())
                 call_SE(summedFile, catName, addString=addString)
