@@ -5,7 +5,6 @@ import glob
 import sys
 import os
 from os import path
-sys.path.append(path.join(os.getcwd(), "lib"))
 import numpy as np
 from shutil import move
 from collections import OrderedDict
@@ -16,10 +15,11 @@ try:
     import pyfits
 except ImportError:
     from astropy.io import fits as pyfits
-    
+
 if os.name == "nt":
     import winsound
 
+sys.path.append(path.join(os.getcwd(), "lib"))
 from lib.GUIlib import *
 from lib.reduction import *
 from lib.se import *
@@ -27,9 +27,9 @@ from lib.filterPolCat import filterPolCat
 
 
 def parse_object_file_name(fName):
-    """ Function gets object name, add string (if exists) and 
+    """ Function gets object name, add string (if exists) and
     filter name out of object file name"""
-    print "parsing %s" % (fName)
+    print("parsing %s" % (fName))
     # File name is like objname+addstr+filter+number.FIT,
     # for example for wcom it may be 'wcom2b001.FIT'
     fNameNoExt = path.splitext(fName)[0]
@@ -87,7 +87,7 @@ class MainApplication(Tk.Frame):
         self.root.protocol('WM_DELETE_WINDOW', self.on_closing)
         self.showHotPixels = Tk.BooleanVar()
         self.showHotPixels.set(False)
-        self.showHotPixels.trace("w", lambda a,b,c: self.update_plot())
+        self.showHotPixels.trace("w", lambda a, b, c: self.update_plot())
         self.menubar = MenuBar(self)
         self.imagPanel = ImagPanel(self)
         self.rightPanel = RightPanel(self)
@@ -102,13 +102,13 @@ class MainApplication(Tk.Frame):
 
     def cycle(self):
         self.check_out_files()
-        if not self.objName is None:
+        if self.objName is not None:
             self.rightPanel.update_object_info(self.objName, self.filtName, self.addString)
             self.run_computation()
         else:
             self.rightPanel.update_object_info("---", "---", "---")
             self.rightPanel.photometryString.set("")
-        self.root.after(1500, self.cycle)        
+        self.root.after(1500, self.cycle)
 
     def check_out_files(self):
         allFiles = glob.glob(path.join(self.dirName, "*.FIT"))
@@ -116,7 +116,7 @@ class MainApplication(Tk.Frame):
         # get rid of dark files and subdirectories
         for f in allFiles:
             fName = path.basename(f)
-            if (not "dark" in fName) and (not "bias" in fName) and (path.isfile(f)):
+            if ("dark" not in fName) and ("bias" not in fName) and (path.isfile(f)):
                 lightFiles.append(f)
         if len(lightFiles) == 0:
             return
@@ -158,7 +158,7 @@ class MainApplication(Tk.Frame):
         self.masterDarkData, darkNumber, self.hotPixels = make_master_dark(self.dirName)
         self.rightPanel.update_message("Dark", "Number %s" % darkNumber)
         self.masterBiasData = make_master_bias(self.dirName)
-        objStr = "%s:%s"%(self.objName,self.addString)
+        objStr = "%s:%s" % (self.objName, self.addString)
         if objStr not in self.photoLog:
             # we only want to add a new object if there is no such
             # object in the dictionary. Otherwise it will erase log data
@@ -167,7 +167,7 @@ class MainApplication(Tk.Frame):
 
         # Clear working directory
         for f in glob.glob(path.join("workDir", "*")):
-            if (not "dark" in path.basename(f)) and (not "bias" in path.basename(f)):
+            if ("dark" not in path.basename(f)) and ("bias" not in path.basename(f)):
                 os.remove(f)
 
     def rename_files(self, numberOfDesiredExposures):
@@ -196,10 +196,8 @@ class MainApplication(Tk.Frame):
         os.rmdir(tmpDir)
         return nexp
 
-
     def update_plot(self):
         self.imagPanel.plot_objects(self.ref, self.polarMode, self.hotPixels)
-                           
 
     def run_computation(self):
         """ This is the main function. It is been
@@ -239,7 +237,7 @@ class MainApplication(Tk.Frame):
             if img not in self.rawImages:
                 newRawImages.append(img)
         if (len(newRawImages) == 0) and (not imageWasRemoved):
-            print "no new images"
+            print("no new images")
             return
         self.rawImages.extend(newRawImages)
         print(self.rawImages)
@@ -295,8 +293,8 @@ class MainApplication(Tk.Frame):
 
 
         # Subtract background
-        print "Cleaining background"
-        backData = find_background(addString = " -BACKPHOTO_TYPE %s " % (self.menubar.backTypeVar.get()))
+        print("Cleaining background")
+        backData = find_background(addString=" -BACKPHOTO_TYPE %s " % (self.menubar.backTypeVar.get()))
         summedFile = path.join("workDir", "summed.fits")
         self.imagPanel.plot_fits_file(summedFile)
 
@@ -310,7 +308,7 @@ class MainApplication(Tk.Frame):
             # fluxes with this aperture
             if self.ref.apertureSize is None:
                 call_SE(summedFile, catNamePolar,
-                        addString = "-BACKPHOTO_TYPE %s" % (self.menubar.backTypeVar.get()))
+                        addString="-BACKPHOTO_TYPE %s" % (self.menubar.backTypeVar.get()))
                 filterPolCat(catNamePolar, catName, self.filtName)
                 self.seCatPolar = SExCatalogue(catNamePolar)
                 self.seCat = SExCatalogue(catName)
@@ -319,7 +317,7 @@ class MainApplication(Tk.Frame):
                 medianFWHM = self.seCat.get_median_value("FWHM_IMAGE")
 
                 # Now we want to run SExtractor once again to get fluxes in
-                # circular apertures of 1.55*FWHM 
+                # circular apertures of 1.55*FWHM
                 aperRadius = 1.55*medianFWHM+1
             else:
                 aperRadius = self.ref.apertureSize
@@ -342,14 +340,14 @@ class MainApplication(Tk.Frame):
             if not returnCode:
                 # Find mean FWHM of standarts
                 meanFWHM = self.ref.get_standatds_fwhm()
-                print meanFWHM
+                print(meanFWHM)
 
                 if self.ref.apertureSize is None:
                     # if the aperture size is not given, we want to compute one
-                    print "using 1.55*FWHM+1 rule to compute an aperture"
+                    print("using 1.55*FWHM+1 rule to compute an aperture")
                     aperRadius = 1.55*meanFWHM+1
                 else:
-                    print "++++++++ using given aperture"
+                    print("++++++++ using given aperture")
                     aperRadius = self.ref.apertureSize
                 # Now we want to run SExtractor once again to get fluxes in circular apertures
                 addString = "-PHOT_APERTURES %1.2f " % (2*aperRadius)
@@ -373,14 +371,13 @@ class MainApplication(Tk.Frame):
         self.update_plot()
 
         # make aperture photometry of object and standarts
-        snValues = {}
         if not self.polarMode:
             objSn, objMag, objMagSigma, stSn = get_photometry(self.seCat, self.ref, self.filtName, aperRadius,
                                                               self.biasValue, self.darkValue, backData)
             self.rightPanel.show_photometry_data(objSn, objMag, objMagSigma, stSn)
             self.magData.append((self.numOfCoaddedImages, objMag))
             # store magnitude value to a photomerty log
-            self.photoLog["%s:%s"%(self.objName,self.addString)][self.filtName]=objMag
+            self.photoLog["%s:%s" % (self.objName, self.addString)][self.filtName] = objMag
 
         elif self.polarMode:
             objSn, objPairSn, stSn, fluxRatios = get_photometry_polar_mode(self.seCatPolar, self.ref, aperRadius,

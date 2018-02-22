@@ -1,7 +1,6 @@
 #! /usr/bin/env python
 
 import glob
-import os
 from os import path
 import numpy as np
 import time
@@ -10,36 +9,36 @@ try:
 except ImportError:
     from astropy.io import fits as pyfits
 
-    
-def make_master_dark(pathToDir): # TODO What if no dark files found?
+
+def make_master_dark(pathToDir):  # TODO What if no dark files found?
     """ Creates median of three newest darks in
     given directory"""
     outPath = path.join("workDir", "master_dark.fits")
     allDarks = glob.glob(path.join(pathToDir, "dark*.FIT"))
     lastDarks = sorted(allDarks, key=path.getctime)[-3:]
     darkNumber = path.split(lastDarks[0])[-1][4:-7]
-    if (not path.exists(outPath)) or (path.getctime(outPath)<path.getctime(lastDarks[0])):
+    if (not path.exists(outPath)) or (path.getctime(outPath) < path.getctime(lastDarks[0])):
         # if there is no master dark at all or there are newer dark frames
         # we need to create a new one
         masterDarkData = np.median([safe_open_fits(fName)[0].data for fName in lastDarks], axis=0)
-        masterDarkHDU =pyfits.PrimaryHDU(data = masterDarkData)
+        masterDarkHDU = pyfits.PrimaryHDU(data=masterDarkData)
         masterDarkHDU.writeto(outPath, clobber=True)
     else:
         # else hust use existing master dark
         masterDarkData = safe_open_fits(outPath)[0].data.copy()
     medianDarkValue = np.median(masterDarkData)
     stdDarkValue = np.std(masterDarkData)
-    hotPixels = np.where(np.abs(masterDarkData-medianDarkValue)>stdDarkValue*10)
+    hotPixels = np.where(np.abs(masterDarkData-medianDarkValue) > stdDarkValue*10)
     return masterDarkData, darkNumber, hotPixels
 
 
-def make_master_bias(pathToDir): # the same quesion
+def make_master_bias(pathToDir):  # the same quesion
     """ Creates median of all bias files in the given directory"""
     outPath = path.join("workDir", "master_bias.fits")
     if not path.exists(outPath):
         allBiases = glob.glob(path.join(pathToDir, "bias*.FIT"))
         masterBiasData = np.median([safe_open_fits(fName)[0].data for fName in allBiases], axis=0)
-        masterBiasHDU =pyfits.PrimaryHDU(data = masterBiasData)
+        masterBiasHDU = pyfits.PrimaryHDU(data=masterBiasData)
         masterBiasHDU.writeto(outPath, clobber=True)
     else:
         masterBiasData = safe_open_fits(outPath)[0].data.copy()
@@ -56,9 +55,9 @@ def safe_open_fits(pathToFile):
             hdu = pyfits.open(pathToFile)
             return hdu
         except IOError:
-            print "Got troubles while reading %s" % (pathToFile)
+            print("Got troubles while reading %s" % (pathToFile))
             time.sleep(0.1)
-    print "Could not open file in 25 attempts"
+    print("Could not open file in 25 attempts")
 
 
 def fix_for_bias_dark_and_flat(pathToDir, rawImages, biasData, darkData, flat):
@@ -83,4 +82,3 @@ def fix_for_bias_dark_and_flat(pathToDir, rawImages, biasData, darkData, flat):
         return outFileList, np.median(biasData), np.median(darkDataReduced)
     else:
         return [], None, None
-

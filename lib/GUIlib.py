@@ -1,22 +1,20 @@
 #! /usr/bin/env python
 
 import os
-import time
 from math import cos, sin, radians
-import itertools
 from os import path
 import glob
 import Tkinter as Tk
 import tkFont
-import tkFileDialog, tkMessageBox
-from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg, NavigationToolbar2TkAgg
+import tkFileDialog
+import tkMessageBox
+from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
 import pylab
 try:
     import pyfits
 except ImportError:
     from astropy.io import fits as pyfits
 import numpy as np
-from scipy.spatial import cKDTree
 
 from lib.alignment import *
 
@@ -64,7 +62,7 @@ class MenuBar(Tk.Frame):
         if os.name == "nt":
             pathToData = path.join("C:\\", "TelescopeData", "*")
             listOfDirs = filter(path.isdir, glob.glob(pathToData))
-            initialdir  = max(listOfDirs, key=path.getctime)
+            initialdir = max(listOfDirs, key=path.getctime)
         else:
             initialdir = None
         dirPath = tkFileDialog.askdirectory(parent=self.window.root,
@@ -74,7 +72,7 @@ class MenuBar(Tk.Frame):
         self.window.setup(dirPath)
 
     def set_alarm(self):
-        popup = AlarmPopup(self.window)
+        AlarmPopup(self.window)
 
     def polar_check(self):
         if self.window.filtName.lower() in "xy":
@@ -105,10 +103,8 @@ class ImagPanel(Tk.Frame):
         self.standartsPairPlotInstance = []
         self.hotPixelsPlotInstance = []
 
-        # self.toolbar = NavigationToolbar2TkAgg(self.canvas, self.window.root)
-        # self.toolbar.update()
         self.canvas.show()
-        self.canvas.get_tk_widget().grid(column=0, row=0) #pack(side=Tk.TOP)
+        self.canvas.get_tk_widget().grid(column=0, row=0)
 
     def remove_objects_from_plot(self, upDateFigure=False):
         if self.objPlotInstance:
@@ -142,11 +138,10 @@ class ImagPanel(Tk.Frame):
                                                 vmin=meanValue, vmax=maxValue)
         self.fig.axis([0, xSize, ySize, 0])
         self.canvas.show()
-        #self.canvas.get_tk_widget().pack(side=Tk.LEFT, fill=Tk.BOTH, expand=1)
 
     def plot_objects(self, reference, polarMode=None, hotPixels=[]):
         self.remove_objects_from_plot()
-        if not reference.objSEParams is None:
+        if reference.objSEParams is not None:
             self.objPlotInstance = self.fig.plot([reference.objSEParams["X_IMAGE"]-1], [reference.objSEParams["Y_IMAGE"]-1],
                                                  marker="o", markerfacecolor="none", markersize=15, markeredgewidth=2,
                                                  markeredgecolor="r")[0]
@@ -169,7 +164,7 @@ class ImagPanel(Tk.Frame):
                                                            markeredgecolor=markColor)[0])
 
         if polarMode:
-            if not reference.objPairSEParams is None:
+            if reference.objPairSEParams is not None:
                 self.objPairPlotInstance = self.fig.plot([reference.objPairSEParams["X_IMAGE"]-1],
                                                          [reference.objPairSEParams["Y_IMAGE"]-1],
                                                          marker="o", markerfacecolor="none", markersize=15,
@@ -205,7 +200,7 @@ class RightPanel(Tk.Frame):
     def __init__(self, window):
         self.window = window
         self.panel = Tk.Frame(self.window.root)
-        self.panel.grid(column=1, row=0)# pack(side=Tk.RIGHT, expand=1)
+        self.panel.grid(column=1, row=0)
         self.objectInfoLabelValue = Tk.StringVar()
         Tk.Label(self.panel, textvariable=self.objectInfoLabelValue).grid(column=0, row=0, sticky=Tk.W)
         self.objectInfoLabelValue.set("Object is not selected.")
@@ -216,7 +211,7 @@ class RightPanel(Tk.Frame):
         Tk.Label(self.panel, textvariable=self.photometryString).grid(column=0, row=3, sticky=Tk.W)
         self.badImagesString = Tk.StringVar()
         Tk.Label(self.panel, textvariable=self.badImagesString, fg="red").grid(column=0, row=4, sticky=Tk.W)
-        
+
     def update_object_info(self, objName, filtName, addString):
         s = "Object: %s" % (objName)
         if addString:
@@ -275,7 +270,7 @@ class RightPanel(Tk.Frame):
                 string += "undef\n"
             else:
                 string += "%1.0f\n" % (values[1])
-        
+
         string += "\n"
         if fluxRatios["obj"] is not None:
             string += "Obj FR: %1.3f\n" % fluxRatios["obj"]
@@ -295,14 +290,13 @@ class RightPanel(Tk.Frame):
         else:
             string = ""
         self.badImagesString.set(string)
-        
 
 
 class AlarmPopup(Tk.Frame):
     def __init__(self, window):
         self.window = window
         self.top = Tk.Toplevel(window.root)
-        self.top.geometry('+%i+%i' % (window.root.winfo_x()+30, window.root.winfo_y()+30)) 
+        self.top.geometry('+%i+%i' % (window.root.winfo_x()+30, window.root.winfo_y()+30))
         Tk.Label(self.top, text="Exposures").grid(column=0, row=0, padx=5, pady=5)
         self.entry = Tk.Entry(self.top, width=5)
         self.entry.insert(0, str(abs(window.desiredExposures)))
@@ -311,7 +305,7 @@ class AlarmPopup(Tk.Frame):
         self.button.grid(column=0, row=1, padx=5, pady=5)
         self.cancelButton = Tk.Button(self.top, text="Cancel", command=self.top.destroy)
         self.cancelButton.grid(column=1, row=1, padx=5, pady=5)
-    
+
     def ok(self):
         self.window.desiredExposures = int(self.entry.get())
         self.top.destroy()
@@ -321,7 +315,7 @@ class RenameFilesPopup(Tk.Frame):
     def __init__(self, window):
         self.window = window
         self.top = Tk.Toplevel(window.root)
-        self.top.geometry('+%i+%i' % (window.root.winfo_x()+30, window.root.winfo_y()+30)) 
+        self.top.geometry('+%i+%i' % (window.root.winfo_x()+30, window.root.winfo_y()+30))
         Tk.Label(self.top, text="Input desired number of exposures").grid(column=0, row=0, padx=5, pady=5)
         self.entry = Tk.Entry(self.top, width=5)
         self.entry.insert(0, str(abs(window.numOfCoaddedImages)))
@@ -331,7 +325,7 @@ class RenameFilesPopup(Tk.Frame):
         self.cancelButton = Tk.Button(self.top, text="Cancel", command=self.top.destroy)
         self.cancelButton.grid(column=1, row=1, padx=5, pady=5)
         self.top.wm_attributes("-topmost", 1)
-    
+
     def ok(self):
         desiredExposures = int(self.entry.get())
         if desiredExposures >= len(self.window.rawImages):
@@ -343,6 +337,7 @@ class RenameFilesPopup(Tk.Frame):
         else:
             tkMessageBox.showwarning("Rename files",
                                      "The number of desired exposures should be bigger than the number of already taken ones.")
+
 
 class PolarChecker(Tk.Frame):
     def __init__(self, window):
@@ -391,7 +386,7 @@ class PolarChecker(Tk.Frame):
         # Text with current rotation
         self.angleValue = Tk.StringVar()
         self.angleValue.set("0")
-        Tk.Label(self.top,textvariable=self.angleValue).grid(column=1, row=2)
+        Tk.Label(self.top, textvariable=self.angleValue).grid(column=1, row=2)
 
         # show catalogue
         self.show_cat()
@@ -409,19 +404,19 @@ class PolarChecker(Tk.Frame):
         if self.yFitsPlotInstance is not None:
             self.yFitsPlotInstance.remove()
             self.yFitsPlotInstance = None
-            
+
         if self.xFitsPlotInstance is not None:
             self.xFitsPlotInstance.remove()
             self.xFitsPlotInstance = None
-            
+
         if self.yObjPlotInstance is not None:
             self.yObjPlotInstance.remove()
             self.yObjPlotInstance = None
-            
+
         if self.xObjPlotInstance is not None:
             self.xObjPlotInstance.remove()
             self.xObjPlotInstance = None
-            
+
         while self.yStdPlotInstance:
             self.yStdPlotInstance.pop().remove()
         while self.xStdPlotInstance:
@@ -430,7 +425,6 @@ class PolarChecker(Tk.Frame):
         # self.yCanvas.show()
         # self.xCanvas.show()
 
-            
     def show_cat(self):
         """ Show catalogue as an image to check if some polar pairs are too close"""
         self.clear_fig()
@@ -438,11 +432,9 @@ class PolarChecker(Tk.Frame):
         ySize = 255
         xCen = 191
         yCen = 127.5
-        xCoords = self.window.seCat.get_all_values("X_IMAGE")
-        yCoords = self.window.seCat.get_all_values("Y_IMAGE")
 
         gridX, gridY = np.meshgrid(range(xSize), range(ySize))
-        
+
         # Create images for x and y mode
         dataY = np.zeros((ySize, xSize))
         dataX = np.zeros((ySize, xSize))
@@ -469,17 +461,16 @@ class PolarChecker(Tk.Frame):
             idxPairX = np.s_[int(yPairX)-r:int(yPairX)+r+1,
                              int(xPairX)-r:int(xPairX)+r+1]
 
-
             sqDistsObj = np.zeros((ySize, xSize))
             sqDistsPairY = np.zeros((ySize, xSize))
             sqDistsPairX = np.zeros((ySize, xSize))
-            
+
             sqDistsObj[idxObj] = (gridX[idxObj]-xObj)**2.0 + (gridY[idxObj]-yObj)**2.0
             sqDistsPairY[idxPairY] = (gridX[idxPairY]-xPairY)**2.0 + (gridY[idxPairY]-yPairY)**2.0
             sqDistsPairX[idxPairX] = (gridX[idxPairX]-xPairX)**2.0 + (gridY[idxPairX]-yPairX)**2.0
 
             objImag = np.zeros((ySize, xSize))
-            objImag[idxObj] = obj["FLUX_AUTO"] * np.exp(-sqDistsObj[idxObj]/(2*obj["FWHM_IMAGE"])) 
+            objImag[idxObj] = obj["FLUX_AUTO"] * np.exp(-sqDistsObj[idxObj]/(2*obj["FWHM_IMAGE"]))
             dataY[idxObj] += objImag[idxObj]
             dataY[idxPairY] += obj["FLUX_AUTO"] * np.exp(-sqDistsPairY[idxPairY]/(2*obj["FWHM_IMAGE"]))
             dataX[idxObj] += objImag[idxObj]
@@ -488,13 +479,12 @@ class PolarChecker(Tk.Frame):
         yMean = np.mean(dataY)
         yStd = np.std(dataY)
         self.yFitsPlotInstance = self.yFig.imshow(dataY, interpolation='gaussian',
-                                              cmap='gray', vmin=yMean, vmax=yMean+2*yStd)
+                                                  cmap='gray', vmin=yMean, vmax=yMean+2*yStd)
 
         xMean = np.mean(dataX)
         xStd = np.std(dataX)
         self.xFitsPlotInstance = self.xFig.imshow(dataX, interpolation='gaussian',
                                                   cmap='gray', vmin=xMean, vmax=xMean+2*xStd)
-
 
         # Overplot location of the object and reference stars
         if self.window.ref.objSEParams is not None:
@@ -527,10 +517,10 @@ class PolarChecker(Tk.Frame):
             self.xStdPlotInstance.append(self.xFig.plot([stx, stx+12.5], [sty, sty-12.5], marker="o",
                                                         markerfacecolor="none", linestyle="", markersize=15,
                                                         markeredgewidth=2, markeredgecolor=markColor)[0])
-        
+
         self.yCanvas.show()
         self.xCanvas.show()
-        
+
 
 class LogWindow(Tk.Frame):
     """

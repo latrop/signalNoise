@@ -1,17 +1,17 @@
 #! /usr/bin/env python
 
-from math import hypot, log10, atan2, degrees, radians, pi
+from math import hypot, log10, pi
 import subprocess
 from shutil import move
 import os
 from os import path
-from os import remove
 import numpy as np
 
 try:
     import pyfits
 except ImportError:
     from astropy.io import fits as pyfits
+
 
 class SExCatalogue(object):
     def __init__(self, catFileName):
@@ -38,7 +38,7 @@ class SExCatalogue(object):
                     obj[self.legend[i]] = params[b:e]
             self.objectList.append(obj)
         self.numOfObjects = len(self.objectList)
-    
+
     def find_nearest(self, x, y):
         """ Returns nearest object to given coordinates"""
         nearest = min(self.objectList, key=lambda obj: hypot(x-obj["X_IMAGE"], y-obj["Y_IMAGE"]))
@@ -53,7 +53,6 @@ class SExCatalogue(object):
 
     def get_all_values(self, parameter):
         return np.array([obj[parameter] for obj in self.objectList])
-    
 
     def __iter__(self):
         return self
@@ -66,23 +65,23 @@ class SExCatalogue(object):
         else:
             self.index = 1
             raise StopIteration
-    
+
 
 def call_SE(fitsFile, catName=None, addString=None):
-    print "calling se"
+    print("calling se")
     if os.name == "nt":  # Windows OS
         pathToSex = path.join('lib', 'sex.exe')
     else:
         pathToSex = 'sex'
     pathToFile = path.join("lib", "default.sex")
     callString = " ".join([pathToSex, fitsFile, '-c %s ' % pathToFile, "-VERBOSE_TYPE QUIET"])
-    if not catName is None:
+    if catName is not None:
         callString += " -CATALOG_NAME %s " % catName
-    if not addString is None:
+    if addString is not None:
         callString += addString
-    print callString
+    print(callString)
     subprocess.call(callString, shell=True)
-    print "done"
+    print("done")
 
 
 def find_background(addString):
@@ -101,15 +100,15 @@ def get_photometry(cat, ref, filtName, aperRadius, biasValue, darkValue, backDat
         if stObs["seParams"] is None:
             stSn[st['name']] = None
             continue
-        fluxAuto = stObs["seParams"]["FLUX_AUTO"]
+        # fluxAuto = stObs["seParams"]["FLUX_AUTO"]
         fluxAper1 = stObs["seParams"]["FLUX_APER"]
         xCenSt = stObs["seParams"]["X_IMAGE"]
         yCenSt = stObs["seParams"]["Y_IMAGE"]
         pValue = pi*aperRadius**2*(backData[int(yCenSt), int(xCenSt)] + darkValue + biasValue**2.0)
         snValue = fluxAper1 / (fluxAper1+pValue)**0.5
         stSn[st['name']] = snValue
-        if (st["mag%s"%filtName.lower()] is not None):
-            magzpt = 2.5*log10(fluxAper1) + st["mag%s"%filtName.lower()]
+        if (st["mag%s" % filtName.lower()] is not None):
+            magzpt = 2.5*log10(fluxAper1) + st["mag%s" % filtName.lower()]
             fluxzpt.append(10**(0.4*(30.0-magzpt)))
 
     # find object magnitude and s/n ratio
@@ -118,11 +117,11 @@ def get_photometry(cat, ref, filtName, aperRadius, biasValue, darkValue, backDat
     xCen = ref.objSEParams["X_IMAGE"]
     yCen = ref.objSEParams["Y_IMAGE"]
     objPhotParams = cat.find_nearest(xCen, yCen)
-    objFluxAuto = objPhotParams["FLUX_AUTO"]
+    # objFluxAuto = objPhotParams["FLUX_AUTO"]
     objFluxAper1 = objPhotParams["FLUX_APER"]
     pValue = pi*aperRadius**2*(backData[int(yCen), int(xCen)] + darkValue + biasValue**2.0)
     objSn = objFluxAper1 / (objFluxAper1+pValue)**0.5
-    if st["mag%s"%filtName.lower()] is not None:
+    if st["mag%s" % filtName.lower()] is not None:
         meanZpt = 30 - 2.5*log10(np.mean(fluxzpt))
         objMag = -2.5*log10(objFluxAper1)+meanZpt
         objMagSigma = 1.0857 / objSn
@@ -141,7 +140,7 @@ def get_photometry_polar_mode(cat, ref, aperRadius, biasValue, darkValue, backDa
         xObjCen = ref.objSEParams["X_IMAGE"]
         yObjCen = ref.objSEParams["Y_IMAGE"]
         objPhotParams = cat.find_nearest(xObjCen, yObjCen)
-        objFluxAuto = objPhotParams["FLUX_AUTO"]
+        # objFluxAuto = objPhotParams["FLUX_AUTO"]
         objFluxAper1 = objPhotParams["FLUX_APER"]
         pValue = pi*aperRadius**2*(backData[int(yObjCen), int(xObjCen)] + darkValue + biasValue**2.0)
         objSN = objFluxAper1 / (objFluxAper1+pValue)**0.5
@@ -150,11 +149,11 @@ def get_photometry_polar_mode(cat, ref, aperRadius, biasValue, darkValue, backDa
         objSN = None
         objFluxAper1 = None
     # pair
-    if not ref.objPairSEParams is None:
+    if ref.objPairSEParams is not None:
         xObjPairCen = ref.objPairSEParams["X_IMAGE"]
         yObjPairCen = ref.objPairSEParams["Y_IMAGE"]
         objPairPhotParams = cat.find_nearest(xObjPairCen, yObjPairCen)
-        objPairFluxAuto = objPairPhotParams["FLUX_AUTO"]
+        # objPairFluxAuto = objPairPhotParams["FLUX_AUTO"]
         objPairFluxAper1 = objPairPhotParams["FLUX_APER"]
         pValue = pi*aperRadius**2*(backData[int(yObjPairCen), int(xObjPairCen)] + darkValue + biasValue**2.0)
         objPairSN = objPairFluxAper1 / (objPairFluxAper1+pValue)**0.5
@@ -171,7 +170,7 @@ def get_photometry_polar_mode(cat, ref, aperRadius, biasValue, darkValue, backDa
     stFluxRatios = []
     for st, stPair in zip(ref.standartsObs, ref.standartPairsObs):
         if not st["seParams"] is None:
-            stFluxAuto = st["seParams"]["FLUX_AUTO"]
+            # stFluxAuto = st["seParams"]["FLUX_AUTO"]
             stFluxAper1 = st["seParams"]["FLUX_APER"]
             xCenSt = st["seParams"]["X_IMAGE"]
             yCenSt = st["seParams"]["Y_IMAGE"]
@@ -181,7 +180,7 @@ def get_photometry_polar_mode(cat, ref, aperRadius, biasValue, darkValue, backDa
             stSN = None
             stFluxAper1 = None
         if not stPair["seParams"] is None:
-            stPairFluxAuto = stPair["seParams"]["FLUX_AUTO"]
+            # stPairFluxAuto = stPair["seParams"]["FLUX_AUTO"]
             stPairFluxAper1 = stPair["seParams"]["FLUX_APER"]
             xCenSt = stPair["seParams"]["X_IMAGE"]
             yCenSt = stPair["seParams"]["Y_IMAGE"]
@@ -211,7 +210,7 @@ def all_st_sn_decreased(stSnOld, stSnNew, polarMode):
                 if (sOld < sNew):
                     return False
             else:
-                print key, stSnOld, stSnNew
+                print(key, stSnOld, stSnNew)
     else:
         for key in stSnOld:
             if (key in stSnNew):

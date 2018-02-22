@@ -6,12 +6,12 @@ import numpy as np
 
 
 def filterPolCat(catInName, catOutName, polarMode):
-    matchDist = 3.0 
+    matchDist = 3.0
     polarMode = polarMode.lower()
     cat = np.genfromtxt(catInName)
     # Sort catalogue by x-coordinate
     try:
-        cat = cat[np.argsort(cat[:,1])]
+        cat = cat[np.argsort(cat[:, 1])]
     except IndexError:
         # empty cat
         return None

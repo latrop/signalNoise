@@ -2,7 +2,6 @@
 
 import glob
 from os import path
-from os import remove
 
 import numpy
 try:
@@ -35,11 +34,10 @@ class Reference(object):
             aperData = aperFile.readlines()[0]
             self.apertureSize = float(aperData.split()[1])
             aperFile.close()
-            print "+++++++ aperture = %1.1f" % self.apertureSize
+            print("+++++++ aperture = %1.1f" % self.apertureSize)
         else:
             self.apertureSize = None
 
-        
     def load_coord_mags(self, nRef):
         """
         Function loads reference coordinates and magnitudes from
@@ -66,7 +64,7 @@ class Reference(object):
 
     def find_shift(self, observedImage, polarMode):
         if not path.exists(observedImage):
-            print "%s not found!" % (observedImage)
+            print("%s not found!" % (observedImage))
             return
         for nRef, refImage in enumerate(self.refImages):
             # Here we try different references to find the
@@ -83,8 +81,8 @@ class Reference(object):
         # from prevous file set of in different filter). If there was
         # not previous good transformation, then the algorithm
         # will use default (None) transformation and do nothing
-        print "not ok"
-            
+        print("not ok")
+
     def apply_transform(self):
         """ Function finds coordinates of object and standarts
         on the observed image"""
@@ -94,8 +92,8 @@ class Reference(object):
         self.standartsObs = []
         for st in self.standarts:
             x, y = self.transform.apply((st["xCen"], st["yCen"]))
-            self.standartsObs.append({"name": st['name'], "xCen": x, "yCen": y})            
-            
+            self.standartsObs.append({"name": st['name'], "xCen": x, "yCen": y})
+
     def match_objects(self, observedImage, catalogue, polarMode=None, matchOnly=False):
         # Let's find where on the observed image objects should
         # be according to reference image using affine transform
@@ -122,7 +120,6 @@ class Reference(object):
             for st in self.standartPairsObs:
                 st["seParams"] = catalogue.find_nearest(st['xCen'], st['yCen'])
         return 0
-
 
     def find_polar_pairs(self, polarMode):
         self.standartPairsObs = []
@@ -170,7 +167,7 @@ def coadd_images(imageList, polarMode):
             imagesToCoadd.append(pathToFile)
     # Shifting should be done only if there is new images:
     if imagesToAlign:
-        print ("%s" % str(polarMode)) * 10
+        print("%s" % str(polarMode)) * 10
         identifications = alipy.ident.run(refImage, imagesToAlign, visu=False, verbose=True, r=10.0,
                                           polarMode=polarMode, refpolar=True)
         for ident in identifications:
@@ -184,14 +181,13 @@ def coadd_images(imageList, polarMode):
                 imagesToCoadd.append(pathToFile)
             else:
                 imagesToCoadd.append(ident.ukn.filepath)
-                print "not ok: %s" % (path.basename(ident.ukn.filepath))
+                print("not ok: %s" % (path.basename(ident.ukn.filepath)))
 
     # refImage image was not remapped, since all other images was remapped
     # to match it, but we want to coadd it as well:
     imagesToCoadd.append(refImage)
 
-
-    # Second step: coadd images    
+    # Second step: coadd images
     data = numpy.zeros((outputshape[1], outputshape[0]))
     maskData = numpy.ones((outputshape[1], outputshape[0]), dtype=float)
     for img in imagesToCoadd:
@@ -201,10 +197,9 @@ def coadd_images(imageList, polarMode):
         maskData[inds] = 0.0
         hdu.close()
     # fix unoverlapped regions by setting median value there
-    data[numpy.where(maskData==0.0)] = numpy.median(data)
+    data[numpy.where(maskData == 0.0)] = numpy.median(data)
     # save summed data to summed.fits file
     outHdu = pyfits.PrimaryHDU(data=data)
     pathToFile = path.join("workDir", "summed.fits")
     outHdu.writeto(pathToFile, clobber=True)
     return len(imagesToCoadd)
-
