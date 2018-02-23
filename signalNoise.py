@@ -58,6 +58,8 @@ class MainApplication(Tk.Frame):
         self.filterChecked = False
         self.desiredExposures = 0
         self.badObjects = []
+        self.list_of_all_observed_objects = OrderedDict()
+        self.object_selected_manually = False
         self.photoLog = OrderedDict()
         # check if there is the working directory and create if nessesary
         if not path.exists("workDir"):
@@ -96,6 +98,21 @@ class MainApplication(Tk.Frame):
 
     def setup(self, dirName):
         self.dirName = dirName
+        # Before going into processing let's check the directory real quick to
+        # find the list of already observed objects.
+        allFiles = glob.glob(path.join(dirName, "*.FIT"))
+        allFiles.sort(key=path.getctime)
+        for fName in allFiles:
+            fNameWithoutPath = path.basename(fName)
+            if ("dark" not in fNameWithoutPath) and ("bias" not in fNameWithoutPath) and (path.isfile(fName)):
+                objName, filtName, addString, frameNumber = parse_object_file_name(fNameWithoutPath)
+                objStr = "%s:%s" % (objName, addString)
+                if objStr not in self.list_of_all_observed_objects:
+                    # A new object found -> add it to the dictionary
+                    self.list_of_all_observed_objects[objStr] = []
+                if filtName not in self.list_of_all_observed_objects[objStr]:
+                    # Add a new filter for the filterlist of the current object
+                    self.list_of_all_observed_objects[objStr].append(filtName)
         self.cycle()
 
     def cycle(self):
@@ -121,7 +138,8 @@ class MainApplication(Tk.Frame):
         newestFile = max(lightFiles, key=path.getctime)
         fNameWithoutPath = path.basename(newestFile)
         # Let's find what object is it
-        self.objName, self.filtName, self.addString, self.frameNumber = parse_object_file_name(fNameWithoutPath)
+        if not self.object_selected_manually:
+            self.objName, self.filtName, self.addString, self.frameNumber = parse_object_file_name(fNameWithoutPath)
 
         # Determine if exposure is in polar mode
         if (self.filtName is not None) and (self.filtName.lower() in ("x", "y")):
@@ -136,6 +154,10 @@ class MainApplication(Tk.Frame):
             os.remove(fName)
 
     def reset_new_filter(self):
+        objStr = "%s:%s" % (self.objName, self.addString)
+        if objStr not in self.list_of_all_observed_objects:
+            self.list_of_all_observed_objects[objStr] = []
+        self.list_of_all_observed_objects[objStr].append(self.filtName)
         self.clean_work_dir()
         self.rawImages = []
         self.darkCleanImages = []

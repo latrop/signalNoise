@@ -22,7 +22,6 @@ class MenuBar(Tk.Frame):
         self.window = window
         self.menubar = Tk.Menu(window.root)
         self.fileMenu = Tk.Menu(self.menubar, tearoff=0)
-        # self.fileMenu.add_command(label="Select object", command=self.select_object)
         self.fileMenu.add_command(label="Select folder", command=self.select_folder)
         self.fileMenu.add_command(label="Rename files", command=self.rename_files)
         self.fileMenu.add_command(label="Reset", command=self.window.reset_new_object)
@@ -49,8 +48,10 @@ class MenuBar(Tk.Frame):
         self.menubar.add_command(label="PolarCheck", command=self.polar_check)
 
         # Log menu button
-        self.menubar.add_command(label="Log", command=self.show_log)
-
+        self.logMenu = Tk.Menu(self.menubar, tearoff=0)
+        self.logMenu.add_command(label="Show log", command=self.show_log)
+        self.logMenu.add_command(label="Select object", command=self.select_object)
+        self.menubar.add_cascade(label="History", menu=self.logMenu)
         # Quit
         self.menubar.add_command(label="Quit", command=self.window.on_closing)
         self.window.root.config(menu=self.menubar)
@@ -84,6 +85,9 @@ class MenuBar(Tk.Frame):
 
     def show_log(self):
         LogWindow(self.window)
+
+    def select_object(self):
+        SelectObjectWindow(self.window)
 
 
 class ImagPanel(Tk.Frame):
@@ -549,3 +553,63 @@ class LogWindow(Tk.Frame):
                         logString += "M_%s=%1.2f  " % (filtName, magValue)
             logString += "\n"
             self.textFrame.insert(Tk.END, logString)
+
+
+class SelectObjectWindow(Tk.Frame):
+    """
+    Window to select previously observed objects to be processed
+    """
+    def __init__(self, window):
+        self.window = window
+        self.top = Tk.Toplevel(window.root)
+        self.top.protocol('WM_DELETE_WINDOW', self.close)
+        # List of all observed objects
+        self.objectsListBox = Tk.Listbox(self.top, selectmode=Tk.SINGLE, height=10)
+        self.objectsListBox.grid(column=0, row=0, rowspan=8)
+        for objStr in self.window.list_of_all_observed_objects.keys():
+            self.objectsListBox.insert(Tk.END, objStr)
+        self.objectsListBox.selection_set(Tk.END)
+        self.objectsListBox.bind('<<ListboxSelect>>', self.select_object)
+
+        # Radoibuttons with filtres
+        self.selectedFilter = Tk.StringVar()
+        self.selectedFilter.set("r")
+        self.selectedFilter.trace("w", self.compute_previous_object)
+        filters = ["b", "v", "r", "i", "y", "x"]
+        self.filterRadioButtons = {}
+        for i, filt in enumerate(filters):
+            self.filterRadioButtons[filt] = Tk.Radiobutton(self.top, text=filt, variable=self.selectedFilter,
+                                                           value=filt)
+            self.filterRadioButtons[filt].grid(column=1, row=i)
+
+        # Close button
+        self.closeButton = Tk.Button(self.top, text="Close", command=self.close)
+        self.closeButton.grid(column=1, row=len(filters)+1)
+        self.objectsListBox.event_generate("<<ListboxSelect>>")
+
+    def select_object(self, event):
+        self.objStr = self.objectsListBox.get(self.objectsListBox.curselection())
+        observed_filters = self.window.list_of_all_observed_objects[self.objStr]
+        # Make visible only radiobuttons that correspond to observed filters
+        filters = ["b", "v", "r", "i", "y", "x"]
+        for filt in filters:
+            if filt in observed_filters:
+                self.filterRadioButtons[filt].config(state="normal")
+            else:
+                self.filterRadioButtons[filt].config(state="disabled")
+        # Select r filter if it was observed, otherwise select just first observed filter
+        if 'r' in observed_filters:
+            self.selectedFilter.set('r')
+        else:
+            self.selectedFilter.set(observed_filters[0])
+
+    def compute_previous_object(self, *args):
+        objName, addString = self.objStr.split(":")
+        self.window.object_selected_manually = True
+        self.window.objName = objName
+        self.window.filtName = self.selectedFilter.get()
+        self.addString = addString
+
+    def close(self):
+        self.window.object_selected_manually = False
+        self.top.destroy()
