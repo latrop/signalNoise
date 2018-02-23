@@ -563,13 +563,21 @@ class SelectObjectWindow(Tk.Frame):
         self.window = window
         self.top = Tk.Toplevel(window.root)
         self.top.protocol('WM_DELETE_WINDOW', self.close)
+
+        # Scrollbar
+        self.scrollbar = Tk.Scrollbar(self.top)
+        self.scrollbar.grid(column=1, row=0, rowspan=8, sticky=Tk.S+Tk.N)
+
         # List of all observed objects
-        self.objectsListBox = Tk.Listbox(self.top, selectmode=Tk.SINGLE, height=10)
+        self.objectsListBox = Tk.Listbox(self.top, selectmode=Tk.SINGLE,
+                                         height=10, yscrollcommand=self.scrollbar.set)
         self.objectsListBox.grid(column=0, row=0, rowspan=8)
         for objStr in self.window.list_of_all_observed_objects.keys():
             self.objectsListBox.insert(Tk.END, objStr)
         self.objectsListBox.selection_set(Tk.END)
         self.objectsListBox.bind('<<ListboxSelect>>', self.select_object)
+        self.scrollbar.config(command=self.objectsListBox.yview)
+        self.objectsListBox.yview_moveto(1)
 
         # Radoibuttons with filtres
         self.selectedFilter = Tk.StringVar()
@@ -580,11 +588,11 @@ class SelectObjectWindow(Tk.Frame):
         for i, filt in enumerate(filters):
             self.filterRadioButtons[filt] = Tk.Radiobutton(self.top, text=filt, variable=self.selectedFilter,
                                                            value=filt)
-            self.filterRadioButtons[filt].grid(column=1, row=i)
+            self.filterRadioButtons[filt].grid(column=2, row=i)
 
         # Close button
         self.closeButton = Tk.Button(self.top, text="Close", command=self.close)
-        self.closeButton.grid(column=1, row=len(filters)+1)
+        self.closeButton.grid(column=2, row=len(filters)+1)
         self.objectsListBox.event_generate("<<ListboxSelect>>")
 
     def select_object(self, event):
