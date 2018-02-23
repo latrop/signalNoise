@@ -50,7 +50,7 @@ def safe_open_fits(pathToFile):
         that is being written at the moment by CCDops.
         In this case we will get IOError and we have to
         wait for writing of the file to be finished"""
-    for i in xrange(25):
+    for i in range(25):
         try:
             hdu = pyfits.open(pathToFile)
             return hdu

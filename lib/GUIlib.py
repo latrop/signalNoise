@@ -16,8 +16,6 @@ except ImportError:
     from astropy.io import fits as pyfits
 import numpy as np
 
-from lib.alignment import *
-
 
 class MenuBar(Tk.Frame):
     def __init__(self, window):
@@ -142,9 +140,10 @@ class ImagPanel(Tk.Frame):
     def plot_objects(self, reference, polarMode=None, hotPixels=[]):
         self.remove_objects_from_plot()
         if reference.objSEParams is not None:
-            self.objPlotInstance = self.fig.plot([reference.objSEParams["X_IMAGE"]-1], [reference.objSEParams["Y_IMAGE"]-1],
-                                                 marker="o", markerfacecolor="none", markersize=15, markeredgewidth=2,
-                                                 markeredgecolor="r")[0]
+            xCoord = reference.objSEParams["X_IMAGE"] - 1
+            yCoord = reference.objSEParams["Y_IMAGE"] - 1
+            self.objPlotInstance = self.fig.plot([xCoord], [yCoord], marker="o", markerfacecolor="none",
+                                                 markersize=15, markeredgewidth=2, markeredgecolor="r")[0]
         else:
             self.objPlotInstance = self.fig.plot([reference.xObjObs-1], [reference.yObjObs-1], marker="o",
                                                  markerfacecolor="none", markersize=15, markeredgewidth=2,
@@ -335,8 +334,8 @@ class RenameFilesPopup(Tk.Frame):
                                   "All done, minor exposure is %i" % (minorExp+1))
             self.top.destroy()
         else:
-            tkMessageBox.showwarning("Rename files",
-                                     "The number of desired exposures should be bigger than the number of already taken ones.")
+            errorString = "The number of desired exposures should be bigger than the number of already taken ones."
+            tkMessageBox.showwarning("Rename files", errorString)
 
 
 class PolarChecker(Tk.Frame):

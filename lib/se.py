@@ -29,7 +29,7 @@ class SExCatalogue(object):
                 self.inds.insert(-1, int(sLine.split()[1]) - 1)
                 continue
             params = [float(p) for p in line.split()]
-            for i in xrange(len(self.legend)):
+            for i in range(len(self.legend)):
                 b = self.inds[i]
                 e = self.inds[i+1]
                 if e == b + 1:

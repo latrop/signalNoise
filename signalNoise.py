@@ -1,6 +1,5 @@
 #! /usr/bin/env python
 
-import time
 import glob
 import sys
 import os
@@ -8,8 +7,7 @@ from os import path
 import numpy as np
 from shutil import move
 from collections import OrderedDict
-
-import pylab
+import Tkinter as Tk
 
 try:
     import pyfits
@@ -20,10 +18,11 @@ if os.name == "nt":
     import winsound
 
 sys.path.append(path.join(os.getcwd(), "lib"))
-from lib.GUIlib import *
-from lib.reduction import *
-from lib.se import *
-from lib.filterPolCat import filterPolCat
+from lib import GUIlib  # noqa
+from lib import alignment  # noqa
+from lib import reduction # noqa
+from lib import se  # noqa
+from lib.filterPolCat import filterPolCat  # noqa
 
 
 def parse_object_file_name(fName):
@@ -59,7 +58,6 @@ class MainApplication(Tk.Frame):
         self.filterChecked = False
         self.desiredExposures = 0
         self.badObjects = []
-        self.biasValue, self.darkValue = 0.0, 0.0
         self.photoLog = OrderedDict()
         # check if there is the working directory and create if nessesary
         if not path.exists("workDir"):
@@ -71,7 +69,7 @@ class MainApplication(Tk.Frame):
                     # File can be protected from removing (for example if it is
                     # opened by another application)
                     os.remove(f)
-                except:
+                except OSError:
                     pass
         # cache flats
         self.flats = {}
@@ -88,9 +86,9 @@ class MainApplication(Tk.Frame):
         self.showHotPixels = Tk.BooleanVar()
         self.showHotPixels.set(False)
         self.showHotPixels.trace("w", lambda a, b, c: self.update_plot())
-        self.menubar = MenuBar(self)
-        self.imagPanel = ImagPanel(self)
-        self.rightPanel = RightPanel(self)
+        self.menubar = GUIlib.MenuBar(self)
+        self.imagPanel = GUIlib.ImagPanel(self)
+        self.rightPanel = GUIlib.RightPanel(self)
         self.root.mainloop()
 
     def on_closing(self):
@@ -154,10 +152,10 @@ class MainApplication(Tk.Frame):
         self.reset_new_filter()
         self.currentObject = self.objName
         self.currentAddString = self.addString
-        self.ref = Reference(self.objName)
-        self.masterDarkData, darkNumber, self.hotPixels = make_master_dark(self.dirName)
+        self.ref = alignment.Reference(self.objName)
+        self.masterDarkData, darkNumber, self.hotPixels = reduction.make_master_dark(self.dirName)
         self.rightPanel.update_message("Dark", "Number %s" % darkNumber)
-        self.masterBiasData = make_master_bias(self.dirName)
+        self.masterBiasData = reduction.make_master_bias(self.dirName)
         objStr = "%s:%s" % (self.objName, self.addString)
         if objStr not in self.photoLog:
             # we only want to add a new object if there is no such
@@ -233,7 +231,8 @@ class MainApplication(Tk.Frame):
 
         # Create the list of images to be processed
         newRawImages = []
-        for img in sorted(glob.glob(path.join(self.dirName, "%s%s%s*" % (self.objName, self.addString, self.filtName)))):
+        searchTemplate = path.join(self.dirName, "%s%s%s*" % (self.objName, self.addString, self.filtName))
+        for img in sorted(glob.glob(searchTemplate)):
             if img not in self.rawImages:
                 newRawImages.append(img)
         if (len(newRawImages) == 0) and (not imageWasRemoved):
@@ -244,7 +243,7 @@ class MainApplication(Tk.Frame):
 
         # Check if filter name is equal to filter in file name
         if not self.filterChecked:
-            hdu = safe_open_fits(self.rawImages[0])
+            hdu = reduction.safe_open_fits(self.rawImages[0])
             header = hdu[0].header
             headerFiltName = header["FILTER"].lower().strip()
             hdu.close()
@@ -254,7 +253,7 @@ class MainApplication(Tk.Frame):
                 # res is True if the error message is new, so we enter
                 # below if clause only one time every filter mismach event
                 if (os.name == "nt") and res:
-                    for i in xrange(5):
+                    for i in range(5):
                         winsound.Beep(400, 500)
                 self.rawImages = []  # Drop these bad files
                 return
@@ -276,25 +275,24 @@ class MainApplication(Tk.Frame):
 
         # Subtract bias and dark files
         if newRawImages:
-            newCleanImages, self.biasValue, self.darkValue = fix_for_bias_dark_and_flat(self.dirName, newRawImages,
+            flat = self.flats[self.filtName.lower()]
+            newCleanImages, biasValue, darkValue = reduction.fix_for_bias_dark_and_flat(self.dirName, newRawImages,
                                                                                         self.masterDarkData,
-                                                                                        self.masterBiasData,
-                                                                                        self.flats[self.filtName.lower()])
+                                                                                        self.masterBiasData, flat)
             if not newCleanImages:
                 return
             self.darkCleanImages.extend(newCleanImages)
 
         # Coadd images
         if not self.polarMode:
-            self.numOfCoaddedImages = coadd_images(self.darkCleanImages, None)
+            self.numOfCoaddedImages = alignment.coadd_images(self.darkCleanImages, None)
         else:
-            self.numOfCoaddedImages = coadd_images(self.darkCleanImages, self.filtName)
+            self.numOfCoaddedImages = alignment.coadd_images(self.darkCleanImages, self.filtName)
         self.rightPanel.update_message("Images summed", "%i" % self.numOfCoaddedImages)
-
 
         # Subtract background
         print("Cleaining background")
-        backData = find_background(addString=" -BACKPHOTO_TYPE %s " % (self.menubar.backTypeVar.get()))
+        backData = se.find_background(addString=" -BACKPHOTO_TYPE %s " % (self.menubar.backTypeVar.get()))
         summedFile = path.join("workDir", "summed.fits")
         self.imagPanel.plot_fits_file(summedFile)
 
@@ -307,11 +305,11 @@ class MainApplication(Tk.Frame):
             # one time to find FWHM and compute aperture, and one time to compute acutal
             # fluxes with this aperture
             if self.ref.apertureSize is None:
-                call_SE(summedFile, catNamePolar,
-                        addString="-BACKPHOTO_TYPE %s" % (self.menubar.backTypeVar.get()))
+                se.call_SE(summedFile, catNamePolar,
+                           addString="-BACKPHOTO_TYPE %s" % (self.menubar.backTypeVar.get()))
                 filterPolCat(catNamePolar, catName, self.filtName)
-                self.seCatPolar = SExCatalogue(catNamePolar)
-                self.seCat = SExCatalogue(catName)
+                self.seCatPolar = se.SExCatalogue(catNamePolar)
+                self.seCat = se.SExCatalogue(catName)
 
                 # Find median FWHM of the image
                 medianFWHM = self.seCat.get_median_value("FWHM_IMAGE")
@@ -323,17 +321,17 @@ class MainApplication(Tk.Frame):
                 aperRadius = self.ref.apertureSize
             addString = "-PHOT_APERTURES %1.2f " % (2*aperRadius)
             addString += "-BACKPHOTO_TYPE %s" % (self.menubar.backTypeVar.get())
-            call_SE(summedFile, catNamePolar, addString=addString)
+            se.call_SE(summedFile, catNamePolar, addString=addString)
             filterPolCat(catNamePolar, catName, self.filtName)
-            self.seCatPolar = SExCatalogue(catNamePolar)
-            self.seCat = SExCatalogue(catName)
+            self.seCatPolar = se.SExCatalogue(catNamePolar)
+            self.seCat = se.SExCatalogue(catName)
 
             # Match objects from reference image on the observed one
             returnCode = self.ref.match_objects(summedFile, self.seCatPolar, self.filtName)
         else:
-            call_SE(summedFile, catName,
-                    addString="-BACKPHOTO_TYPE %s" % (self.menubar.backTypeVar.get()))
-            self.seCat = SExCatalogue(catName)
+            se.call_SE(summedFile, catName,
+                       addString="-BACKPHOTO_TYPE %s" % (self.menubar.backTypeVar.get()))
+            self.seCat = se.SExCatalogue(catName)
 
             # Match objects from reference image on the observed one
             returnCode = self.ref.match_objects(summedFile, self.seCat)
@@ -352,8 +350,8 @@ class MainApplication(Tk.Frame):
                 # Now we want to run SExtractor once again to get fluxes in circular apertures
                 addString = "-PHOT_APERTURES %1.2f " % (2*aperRadius)
                 addString += "-BACKPHOTO_TYPE %s" % (self.menubar.backTypeVar.get())
-                call_SE(summedFile, catName, addString=addString)
-                self.seCat = SExCatalogue(catName)
+                se.call_SE(summedFile, catName, addString=addString)
+                self.seCat = se.SExCatalogue(catName)
 
                 # Match objects once again. We already have a valid transform, so
                 # we only need to match objects
@@ -372,20 +370,20 @@ class MainApplication(Tk.Frame):
 
         # make aperture photometry of object and standarts
         if not self.polarMode:
-            objSn, objMag, objMagSigma, stSn = get_photometry(self.seCat, self.ref, self.filtName, aperRadius,
-                                                              self.biasValue, self.darkValue, backData)
+            objSn, objMag, objMagSigma, stSn = se.get_photometry(self.seCat, self.ref, self.filtName, aperRadius,
+                                                                 biasValue, darkValue, backData)
             self.rightPanel.show_photometry_data(objSn, objMag, objMagSigma, stSn)
             self.magData.append((self.numOfCoaddedImages, objMag))
             # store magnitude value to a photomerty log
             self.photoLog["%s:%s" % (self.objName, self.addString)][self.filtName] = objMag
 
         elif self.polarMode:
-            objSn, objPairSn, stSn, fluxRatios = get_photometry_polar_mode(self.seCatPolar, self.ref, aperRadius,
-                                                                           self.biasValue, self.darkValue, backData)
+            objSn, objPairSn, stSn, fluxRatios = se.get_photometry_polar_mode(self.seCatPolar, self.ref, aperRadius,
+                                                                              biasValue, darkValue, backData)
             self.rightPanel.show_photometry_data_polar_mode(objSn, objPairSn, stSn, fluxRatios)
 
         # Check if object sn ratio decreased (for example due to a cloud)
-        if ((objSn is not None) and (objSn < self.objSn)) and all_st_sn_decreased(self.stSn, stSn, self.polarMode):
+        if ((objSn is not None) and (objSn < self.objSn)) and se.all_st_sn_decreased(self.stSn, stSn, self.polarMode):
             for f in newRawImages:
                 objName = path.splitext(path.basename(f))[0]
                 self.badObjects.append(objName)
