@@ -25,27 +25,6 @@ from lib import se  # noqa
 from lib.filterPolCat import filterPolCat  # noqa
 
 
-def parse_object_file_name(fName):
-    """ Function gets object name, add string (if exists) and
-    filter name out of object file name"""
-    print("parsing %s" % (fName))
-    # File name is like objname+addstr+filter+number.FIT,
-    # for example for wcom it may be 'wcom2b001.FIT'
-    fNameNoExt = path.splitext(fName)[0]
-    fNameNoNumbers = fNameNoExt[:-3]
-    frameNumber = int(fNameNoExt[-3:])
-    filtName = fNameNoNumbers[-1]
-    fNameNoFilt = fNameNoNumbers[:-1]
-    # Let's find what object is it
-    for line in open(path.join("references", "list_of_objects.dat")):
-        objName = line.strip()
-        if fNameNoFilt.startswith(objName):
-            addString = fNameNoFilt[len(objName):]
-            return objName, filtName, addString, frameNumber
-    # No sutable object found
-    return None, None, None, None
-
-
 class MainApplication(Tk.Frame):
     def __init__(self, *args, **kwargs):
         self.objName = None
@@ -58,7 +37,6 @@ class MainApplication(Tk.Frame):
         self.filterChecked = False
         self.desiredExposures = 0
         self.badObjects = []
-        self.list_of_all_observed_objects = OrderedDict()
         self.object_selected_manually = False
         self.photoLog = OrderedDict()
         # check if there is the working directory and create if nessesary
@@ -98,21 +76,6 @@ class MainApplication(Tk.Frame):
 
     def setup(self, dirName):
         self.dirName = dirName
-        # Before going into processing let's check the directory real quick to
-        # find the list of already observed objects.
-        allFiles = glob.glob(path.join(dirName, "*.FIT"))
-        allFiles.sort(key=path.getctime)
-        for fName in allFiles:
-            fNameWithoutPath = path.basename(fName)
-            if ("dark" not in fNameWithoutPath) and ("bias" not in fNameWithoutPath) and (path.isfile(fName)):
-                objName, filtName, addString, frameNumber = parse_object_file_name(fNameWithoutPath)
-                objStr = "%s:%s" % (objName, addString)
-                if objStr not in self.list_of_all_observed_objects:
-                    # A new object found -> add it to the dictionary
-                    self.list_of_all_observed_objects[objStr] = []
-                if filtName not in self.list_of_all_observed_objects[objStr]:
-                    # Add a new filter for the filterlist of the current object
-                    self.list_of_all_observed_objects[objStr].append(filtName)
         self.cycle()
 
     def cycle(self):
@@ -139,7 +102,8 @@ class MainApplication(Tk.Frame):
         fNameWithoutPath = path.basename(newestFile)
         # Let's find what object is it
         if not self.object_selected_manually:
-            self.objName, self.filtName, self.addString, self.frameNumber = parse_object_file_name(fNameWithoutPath)
+            (self.objName, self.filtName,
+             self.addString, self.frameNumber) = reduction.parse_object_file_name(fNameWithoutPath)
 
         # Determine if exposure is in polar mode
         if (self.filtName is not None) and (self.filtName.lower() in ("x", "y")):
@@ -154,10 +118,6 @@ class MainApplication(Tk.Frame):
             os.remove(fName)
 
     def reset_new_filter(self):
-        objStr = "%s:%s" % (self.objName, self.addString)
-        if objStr not in self.list_of_all_observed_objects:
-            self.list_of_all_observed_objects[objStr] = []
-        self.list_of_all_observed_objects[objStr].append(self.filtName)
         self.clean_work_dir()
         self.rawImages = []
         self.darkCleanImages = []
@@ -203,7 +163,7 @@ class MainApplication(Tk.Frame):
             os.mkdir(tmpDir)
         for fName in sorted(self.rawImages, reverse=True):
             fNameWithoutPath = path.basename(fName)
-            objName, filtName, addString, frameNumber = parse_object_file_name(fNameWithoutPath)
+            objName, filtName, addString, frameNumber = reduction.parse_object_file_name(fNameWithoutPath)
             fout = "".join([objName, addString, filtName])
             fout += "%03i" % nexp
             nexp -= 1

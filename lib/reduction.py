@@ -82,3 +82,24 @@ def fix_for_bias_dark_and_flat(pathToDir, rawImages, biasData, darkData, flat):
         return outFileList, np.median(biasData), np.median(darkDataReduced)
     else:
         return [], None, None
+
+
+def parse_object_file_name(fName):
+    """ Function gets object name, add string (if exists) and
+    filter name out of object file name"""
+    print("parsing %s" % (fName))
+    # File name is like objname+addstr+filter+number.FIT,
+    # for example for wcom it may be 'wcom2b001.FIT'
+    fNameNoExt = path.splitext(fName)[0]
+    fNameNoNumbers = fNameNoExt[:-3]
+    frameNumber = int(fNameNoExt[-3:])
+    filtName = fNameNoNumbers[-1]
+    fNameNoFilt = fNameNoNumbers[:-1]
+    # Let's find what object is it
+    for line in open(path.join("references", "list_of_objects.dat")):
+        objName = line.strip()
+        if fNameNoFilt.startswith(objName):
+            addString = fNameNoFilt[len(objName):]
+            return objName, filtName, addString, frameNumber
+    # No sutable object found
+    return None, None, None, None

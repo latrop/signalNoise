@@ -4,6 +4,7 @@ import os
 from math import cos, sin, radians
 from os import path
 import glob
+from collections import OrderedDict
 import Tkinter as Tk
 import tkFont
 import tkFileDialog
@@ -15,6 +16,8 @@ try:
 except ImportError:
     from astropy.io import fits as pyfits
 import numpy as np
+
+from reduction import parse_object_file_name
 
 
 class MenuBar(Tk.Frame):
@@ -564,6 +567,23 @@ class SelectObjectWindow(Tk.Frame):
         self.top = Tk.Toplevel(window.root)
         self.top.protocol('WM_DELETE_WINDOW', self.close)
 
+        # Before going into processing let's check the directory real quick to
+        # find the list of already observed objects.
+        self.list_of_all_observed_objects = OrderedDict()
+        allFiles = glob.glob(path.join(self.window.dirName, "*.FIT"))
+        allFiles.sort(key=path.getctime)
+        for fName in allFiles:
+            fNameWithoutPath = path.basename(fName)
+            if ("dark" not in fNameWithoutPath) and ("bias" not in fNameWithoutPath) and (path.isfile(fName)):
+                objName, filtName, addString, frameNumber = parse_object_file_name(fNameWithoutPath)
+                objStr = "%s:%s" % (objName, addString)
+                if objStr not in self.list_of_all_observed_objects:
+                    # A new object found -> add it to the dictionary
+                    self.list_of_all_observed_objects[objStr] = []
+                if filtName not in self.list_of_all_observed_objects[objStr]:
+                    # Add a new filter for the filterlist of the current object
+                    self.list_of_all_observed_objects[objStr].append(filtName)
+
         # Scrollbar
         self.scrollbar = Tk.Scrollbar(self.top)
         self.scrollbar.grid(column=1, row=0, rowspan=8, sticky=Tk.S+Tk.N)
@@ -572,7 +592,7 @@ class SelectObjectWindow(Tk.Frame):
         self.objectsListBox = Tk.Listbox(self.top, selectmode=Tk.SINGLE,
                                          height=10, yscrollcommand=self.scrollbar.set)
         self.objectsListBox.grid(column=0, row=0, rowspan=8)
-        for objStr in self.window.list_of_all_observed_objects.keys():
+        for objStr in self.list_of_all_observed_objects.keys():
             self.objectsListBox.insert(Tk.END, objStr)
         self.objectsListBox.selection_set(Tk.END)
         self.objectsListBox.bind('<<ListboxSelect>>', self.select_object)
@@ -597,7 +617,7 @@ class SelectObjectWindow(Tk.Frame):
 
     def select_object(self, event):
         self.objStr = self.objectsListBox.get(self.objectsListBox.curselection())
-        observed_filters = self.window.list_of_all_observed_objects[self.objStr]
+        observed_filters = self.list_of_all_observed_objects[self.objStr]
         # Make visible only radiobuttons that correspond to observed filters
         filters = ["b", "v", "r", "i", "y", "x"]
         for filt in filters:
