@@ -636,7 +636,7 @@ class SelectObjectWindow(Tk.Frame):
         self.window.object_selected_manually = True
         self.window.objName = objName
         self.window.filtName = self.selectedFilter.get()
-        self.addString = addString
+        self.window.addString = addString
 
     def close(self):
         self.window.object_selected_manually = False
