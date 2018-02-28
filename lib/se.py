@@ -57,7 +57,7 @@ class SExCatalogue(object):
     def __iter__(self):
         return self
 
-    def next(self):
+    def __next__(self):
         """ Iteration method """
         if self.index < self.numOfObjects:
             self.index += 1

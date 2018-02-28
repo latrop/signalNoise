@@ -11,10 +11,10 @@ $HeadURL: http://astropy.scipy.org/svn/astrolib/trunk/asciidata/Lib/asciicolumn.
 """
 __version__ = "Version 1.0 $LastChangedRevision: 503 $"
 
-import string
-from asciielement import *
-from asciierror   import *
-from asciiutils   import *
+from .asciielement import *
+from .asciierror   import *
+from .asciiutils   import *
+
 
 class NullColumn(object):
     """
@@ -71,13 +71,13 @@ class AsciiColumn(NullColumn):
         self.colcomment =''
         self._data    = []
         self._defined = 0
-        self._type    = types.StringType
+        self._type    = str
         self._format  = ['%10s','%10s']
         self._nrows   = 0
 
         # set the default null string
         if null:
-            self._null = [string.strip(null[0])]
+            self._null = [null[0].strip()]
         else:
             self._null  = ['*']
 

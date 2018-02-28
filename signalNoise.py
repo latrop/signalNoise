@@ -7,7 +7,7 @@ from os import path
 import numpy as np
 from shutil import move
 from collections import OrderedDict
-import Tkinter as Tk
+import tkinter as Tk
 
 try:
     import pyfits

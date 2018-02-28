@@ -5,10 +5,10 @@ from math import cos, sin, radians
 from os import path
 import glob
 from collections import OrderedDict
-import Tkinter as Tk
-import tkFont
-import tkFileDialog
-import tkMessageBox
+import tkinter as Tk
+from tkinter import font as tkFont
+from tkinter import filedialog as tkFileDialog
+from tkinter import messagebox as tkMessageBox
 from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
 import pylab
 try:
@@ -636,7 +636,7 @@ class SelectObjectWindow(Tk.Frame):
         self.window.object_selected_manually = True
         self.window.objName = objName
         self.window.filtName = self.selectedFilter.get()
-        self.addString = addString
+        self.window.addString = addString
 
     def close(self):
         self.window.object_selected_manually = False

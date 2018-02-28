@@ -13,7 +13,7 @@ $HeadURL: http://astropy.scipy.org/svn/astrolib/trunk/asciidata/Lib/asciiutils.p
 """
 __version__ = "Version 1.0 $LastChangedRevision: 503 $"
 
-import string, sys, os, types
+import sys, os, types
 
 class NicePrinter(object):
     """
@@ -27,13 +27,13 @@ class NicePrinter(object):
     def __init__(self, stream=None, delimiter=None, linestart=None, linend=None):
         """
         Initializes the class
-    
+
         A simple initializer. Most of the class attributes
         are given as parameters
-    
+
         @param stream: I/O stream to write to
         @type stream: I/O stream
-        @param delimiter: optional delimiter 
+        @param delimiter: optional delimiter
         @type delimiter: string
         @param linend: optional linenend
         @type linend: string
@@ -43,7 +43,7 @@ class NicePrinter(object):
 
         # set a start value
         self._start  = ''
-        
+
         # set the delimiter
         if delimiter != None:
             #       self._delimiter = ' '+delimiter+' '
@@ -70,8 +70,8 @@ class NicePrinter(object):
 
         This general method prints any string
         to stream.
-        
-        @param hstring: the header to print 
+
+        @param hstring: the header to print
         @type hstring: string
         """
         # that's easy up to now
@@ -86,8 +86,8 @@ class NicePrinter(object):
             linend and linestart are taken into account.
         The lines is directly sent to the I/O stream.
 
-        @param strlist: list 
-        @type strlist: [string]         
+        @param strlist: list
+        @type strlist: [string]
             """
         self._stream.write(self._start
                            + self._delimiter.join(strlist) + self._linend)
@@ -116,7 +116,7 @@ class Separator(object):
 
         @param line: the ascii line to be separated
         @type line: string
-        
+
         @return: the list of items
         @rtype: [string]
         """
@@ -143,7 +143,7 @@ class Separator(object):
         to belong to the item and are preserved.
         This is advantageous to keep the item length for
         string columns with leading spaces.
-        
+
         @param line: the ascii line to be separated
         @type line: string
 
@@ -154,7 +154,7 @@ class Separator(object):
         witems = []
 
         # split it conventionally
-        items = string.split(string.strip(line))
+        items = line.strip().split()
 
         # go again over the line and identify
         # the exact starting position of each
@@ -175,7 +175,7 @@ class Separator(object):
 
         The method transforms a line into the list
         of its delimiter separated items.
-        
+
         @param line: the ascii line to be separated
         @type line: string
 
@@ -183,7 +183,7 @@ class Separator(object):
         @rtype: [string]
         """
         # split the line
-        items = string.split(line, self._delimiter)
+        items = line.split(self._delimiter)
 
         # return the list
         return items
@@ -206,16 +206,16 @@ class AsciiLenGetIter(object):
         # set the maximum column index
         self._max_index = len(self._len_get_object) - 1
 
-    def _iter(self):
+    def __iter__(self):
         """
         Mandatory method for an iterator class
         """
         return self
 
-    def next(self):
+    def __next__(self):
         """
         Mandatory method for an iterator class
-        
+
         The method gives the next object in the iterator sequence.
         In case that a next object does no longer exist,
         a corresponding exception is thrown to indicate
@@ -259,7 +259,7 @@ class AsciiColumnIter(object):
     def next(self):
         """
         Mandatory method for an iterator class
-        
+
         The method gives the next object in the iterator sequence.
         In case that a next object does no longer exist,
         a corresponding exception is thrown to indicate

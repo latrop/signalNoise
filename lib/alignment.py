@@ -86,12 +86,12 @@ class Reference(object):
     def apply_transform(self):
         """ Function finds coordinates of object and standarts
         on the observed image"""
-        self.xObjObs, self.yObjObs = self.transform.apply((self.xObj, self.yObj))
+        self.xObjObs, self.yObjObs = self.transform.apply(self.xObj, self.yObj)
 
         # find coordinates of standarts
         self.standartsObs = []
         for st in self.standarts:
-            x, y = self.transform.apply((st["xCen"], st["yCen"]))
+            x, y = self.transform.apply(st["xCen"], st["yCen"])
             self.standartsObs.append({"name": st['name'], "xCen": x, "yCen": y})
 
     def match_objects(self, observedImage, catalogue, polarMode=None, matchOnly=False):
@@ -167,7 +167,6 @@ def coadd_images(imageList, polarMode):
             imagesToCoadd.append(pathToFile)
     # Shifting should be done only if there is new images:
     if imagesToAlign:
-        print("%s" % str(polarMode)) * 10
         identifications = alipy.ident.run(refImage, imagesToAlign, visu=False, verbose=True, r=10.0,
                                           polarMode=polarMode, refpolar=True)
         for ident in identifications:
