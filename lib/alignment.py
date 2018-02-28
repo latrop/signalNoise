@@ -34,7 +34,6 @@ class Reference(object):
             aperData = aperFile.readlines()[0]
             self.apertureSize = float(aperData.split()[1])
             aperFile.close()
-            print("+++++++ aperture = %1.1f" % self.apertureSize)
         else:
             self.apertureSize = None
 
@@ -64,7 +63,6 @@ class Reference(object):
 
     def find_shift(self, observedImage, polarMode):
         if not path.exists(observedImage):
-            print("%s not found!" % (observedImage))
             return
         for nRef, refImage in enumerate(self.refImages):
             # Here we try different references to find the
@@ -169,18 +167,22 @@ def coadd_images(imageList, polarMode):
     if imagesToAlign:
         identifications = alipy.ident.run(refImage, imagesToAlign, visu=False, verbose=True, r=10.0,
                                           polarMode=polarMode, refpolar=True)
-        for ident in identifications:
-            if ident.ok is True:
-                # if alignment is ok, then transform image
-                alipy.align.affineremap(ident.ukn.filepath, ident.trans, shape=outputshape,
-                                        makepng=False, outdir='workDir', verbose=False)
-                # and add it to coadd list
-                imgName = path.splitext(path.basename(ident.ukn.filepath))[0]
-                pathToFile = path.join("workDir", "%s_affineremap.fits" % (imgName))
-                imagesToCoadd.append(pathToFile)
-            else:
-                imagesToCoadd.append(ident.ukn.filepath)
-                print("not ok: %s" % (path.basename(ident.ukn.filepath)))
+        if identifications is not None:
+            for ident in identifications:
+                if ident.ok is True:
+                    # if alignment is ok, then transform image
+                    alipy.align.affineremap(ident.ukn.filepath, ident.trans, shape=outputshape,
+                                            makepng=False, outdir='workDir', verbose=False)
+                    # and add it to coadd list
+                    imgName = path.splitext(path.basename(ident.ukn.filepath))[0]
+                    pathToFile = path.join("workDir", "%s_affineremap.fits" % (imgName))
+                    imagesToCoadd.append(pathToFile)
+                else:
+                    imagesToCoadd.append(ident.ukn.filepath)
+                    print("not ok: %s" % (path.basename(ident.ukn.filepath)))
+        else:
+            # We didn't manage to align images so just coadd them as is
+            imagesToCoadd.extend(imagesToAlign)
 
     # refImage image was not remapped, since all other images was remapped
     # to match it, but we want to coadd it as well:
