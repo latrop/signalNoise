@@ -16,7 +16,7 @@ __version__ = "Version 1.1 $LastChangedRevision: 503 $"
 import string
 import re
 
-from asciiutils  import *
+from .asciiutils  import *
 
 class Header(object):
     """
@@ -229,7 +229,7 @@ class Header(object):
         commentpattern = re.compile(comment_char)
         sextractor_header = re.compile('^#\s*(\d+)\s+([+*-/()\w]+)([^\[]*)(\[\w+\])?(.*)\n')
         # open the data file and go over its rows
-        for line in file(filename, 'r'):
+        for line in open(filename, 'r'):
             if commentpattern.match(line):
                 #append everything after the comment_char separator to Fullhdata
                 line_with_comment_char_stripped_off = commentpattern.sub('',line,count=1)
@@ -308,11 +308,11 @@ class Header(object):
         comment = None
         if index < len(self.CollInfo):
             if self.CollInfo[index]:
-                if self.CollInfo[index].has_key('NAME'):
-                    name =  str(self.CollInfo[index]['NAME'])
-                if self.CollInfo[index].has_key('UNIT'):
+                if 'NAME' in self.CollInfo[index]:
+                    name = str(self.CollInfo[index]['NAME'])
+                if 'UNIT' in self.CollInfo[index]:
                     unit = str(self.CollInfo[index]['UNIT'])
-                if self.CollInfo[index].has_key('COMMENT'):
+                if 'COMMENT' in self.CollInfo[index]:
                     comment = str(self.CollInfo[index]['COMMENT'])
         else:
             # is the very last column in the list a known vector?

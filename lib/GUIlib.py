@@ -5,10 +5,10 @@ from math import cos, sin, radians
 from os import path
 import glob
 from collections import OrderedDict
-import Tkinter as Tk
-import tkFont
-import tkFileDialog
-import tkMessageBox
+import tkinter as Tk
+from tkinter import font as tkFont
+from tkinter import filedialog as tkFileDialog
+from tkinter import messagebox as tkMessageBox
 from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
 import pylab
 try:
@@ -621,7 +621,7 @@ class SelectObjectWindow(Tk.Frame):
         # Make visible only radiobuttons that correspond to observed filters
         filters = ["b", "v", "r", "i", "y", "x"]
         for filt in filters:
-            if filt in observed_filters:
+            if (filt in observed_filters) or (filt.upper() in observed_filters):
                 self.filterRadioButtons[filt].config(state="normal")
             else:
                 self.filterRadioButtons[filt].config(state="disabled")
@@ -635,7 +635,12 @@ class SelectObjectWindow(Tk.Frame):
         objName, addString = self.objStr.split(":")
         self.window.object_selected_manually = True
         self.window.objName = objName
-        self.window.filtName = self.selectedFilter.get()
+        if self.selectedFilter.get() in self.list_of_all_observed_objects[self.objStr]:
+            self.window.filtName = self.selectedFilter.get()
+        else:
+            # Take into account the possibilirt that the user have set
+            # a capital character to denote the filter
+            self.window.filtName = self.selectedFilter.get().upper()
         self.window.addString = addString
 
     def close(self):

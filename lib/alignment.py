@@ -34,7 +34,6 @@ class Reference(object):
             aperData = aperFile.readlines()[0]
             self.apertureSize = float(aperData.split()[1])
             aperFile.close()
-            print("+++++++ aperture = %1.1f" % self.apertureSize)
         else:
             self.apertureSize = None
 
@@ -64,7 +63,6 @@ class Reference(object):
 
     def find_shift(self, observedImage, polarMode):
         if not path.exists(observedImage):
-            print("%s not found!" % (observedImage))
             return
         for nRef, refImage in enumerate(self.refImages):
             # Here we try different references to find the
@@ -86,12 +84,12 @@ class Reference(object):
     def apply_transform(self):
         """ Function finds coordinates of object and standarts
         on the observed image"""
-        self.xObjObs, self.yObjObs = self.transform.apply((self.xObj, self.yObj))
+        self.xObjObs, self.yObjObs = self.transform.apply(self.xObj, self.yObj)
 
         # find coordinates of standarts
         self.standartsObs = []
         for st in self.standarts:
-            x, y = self.transform.apply((st["xCen"], st["yCen"]))
+            x, y = self.transform.apply(st["xCen"], st["yCen"])
             self.standartsObs.append({"name": st['name'], "xCen": x, "yCen": y})
 
     def match_objects(self, observedImage, catalogue, polarMode=None, matchOnly=False):
@@ -167,21 +165,24 @@ def coadd_images(imageList, polarMode):
             imagesToCoadd.append(pathToFile)
     # Shifting should be done only if there is new images:
     if imagesToAlign:
-        print("%s" % str(polarMode)) * 10
         identifications = alipy.ident.run(refImage, imagesToAlign, visu=False, verbose=True, r=10.0,
                                           polarMode=polarMode, refpolar=True)
-        for ident in identifications:
-            if ident.ok is True:
-                # if alignment is ok, then transform image
-                alipy.align.affineremap(ident.ukn.filepath, ident.trans, shape=outputshape,
-                                        makepng=False, outdir='workDir', verbose=False)
-                # and add it to coadd list
-                imgName = path.splitext(path.basename(ident.ukn.filepath))[0]
-                pathToFile = path.join("workDir", "%s_affineremap.fits" % (imgName))
-                imagesToCoadd.append(pathToFile)
-            else:
-                imagesToCoadd.append(ident.ukn.filepath)
-                print("not ok: %s" % (path.basename(ident.ukn.filepath)))
+        if identifications is not None:
+            for ident in identifications:
+                if ident.ok is True:
+                    # if alignment is ok, then transform image
+                    alipy.align.affineremap(ident.ukn.filepath, ident.trans, shape=outputshape,
+                                            makepng=False, outdir='workDir', verbose=False)
+                    # and add it to coadd list
+                    imgName = path.splitext(path.basename(ident.ukn.filepath))[0]
+                    pathToFile = path.join("workDir", "%s_affineremap.fits" % (imgName))
+                    imagesToCoadd.append(pathToFile)
+                else:
+                    imagesToCoadd.append(ident.ukn.filepath)
+                    print("not ok: %s" % (path.basename(ident.ukn.filepath)))
+        else:
+            # We didn't manage to align images so just coadd them as is
+            imagesToCoadd.extend(imagesToAlign)
 
     # refImage image was not remapped, since all other images was remapped
     # to match it, but we want to coadd it as well:

@@ -13,8 +13,8 @@ $HeadURL: http://astropy.scipy.org/svn/astrolib/trunk/asciidata/Lib/asciielement
 """
 __version__ = "Version 1.0 $LastChangedRevision: 503 $"
 
-import string, sys, os, types
-from asciierror import *
+import sys, os
+from .asciierror import *
 
 class Element(object):
     """
@@ -46,7 +46,7 @@ class Element(object):
     def get_type(self):
         """
         Returns the element type.
-        
+
         @return: the element type
         @rtype: <types> name
         """
@@ -64,13 +64,13 @@ class Element(object):
         """
         # check for int
         if self._isint(item):
-            return types.IntType
+            return int
         # check for float
         elif self._isfloat(item):
-            return types.FloatType
+            return float
         # the default is string
         else:
-            return types.StringType        
+            return str
 
     def _isint(self, item):
         """
@@ -121,7 +121,7 @@ class ValElement(Element):
         if isinstance(item, type("a")):
             # if yes, initialize it in the super class
             super(ValElement, self).__init__(item)
-            
+
             # get the typed value
             self._tvalue = self._get_tvalue(item, self.get_type())
         else:
@@ -150,10 +150,10 @@ class ValElement(Element):
         """
         self._tvalue = tvalue
 
-    def _get_tvalue(self, item, type):
+    def _get_tvalue(self, item, type_):
         """
         Transforms and returns the typed value.
-        
+
         For a string element with a type different from
         string, the string is transformed into this type
         (e.g. "  1", int ----> 1).
@@ -161,14 +161,14 @@ class ValElement(Element):
         @param item: the element to transform
         @type item: string
         @param type: the type to transform into
-        @type type: <types> name        
+        @type type: <types> name
 
         @return: the typed element value
         @rtype: string/integer/float
         """
-        if type == types.IntType:
+        if isinstance(type_, int):
             return int(item)
-        elif type == types.FloatType:
+        elif isinstance(type_, float):
             return float(item)
         else:
             return self._item
@@ -191,7 +191,7 @@ class ForElement(ValElement):
 
         # check whether it is a string
         if isinstance(item, type("a")):
-            
+
             # get the format
             self._fvalue = self._get_fvalue(self.get_type())
         else:
@@ -207,22 +207,22 @@ class ForElement(ValElement):
         """
         return self._fvalue
 
-    def _get_fvalue(self, type):
+    def _get_fvalue(self, type_):
         """
         Determines and returns the element format.
 
         The proper format for the element is derived from
         it string representation. This string representation
         originates directly from the input data.
-        
-        @param type: the type to transform into
-        @type type: <types> name        
+
+        @param type_: the type to transform into
+        @type type: <types> name
 
         @return: the format string
         @rtype: [string]
         """
         # check for te data type
-        if type == types.IntType:
+        if isinstance(type_, int):
 
             # get the length of the stripped string version
             svalue = string.strip(self._item)
@@ -240,14 +240,14 @@ class ForElement(ValElement):
                 # return the format
                 return ['% '+str(flength)+'i','%'+str(flength+1)+'s']
 
-        elif type == types.FloatType:
+        elif isinstance(type_, float):
             # store the stripped string
-            svalue = string.strip(self._item)
+            svalue = self._item.strip()
 
             # check for an exponent
-            epos = string.find(svalue, 'E')
+            epos = svalue.find('E')
             if epos < 0:
-                epos = string.find(svalue, 'e')
+                epos = svalue.find('e')
 
             # get the floating point format
             if epos > -1:
@@ -264,11 +264,11 @@ class ForElement(ValElement):
                 if string.find(svalue, '.') < 0:
                     # correct for missing dot
                     accuracy += 1
-                
+
                 # just for security:
                 if accuracy < 0:
                     accuracy = 0
-                    
+
                 # compute the total length
                 tlength = accuracy+6
 
@@ -282,7 +282,7 @@ class ForElement(ValElement):
                 # find the position of the '.' and the total length
                 dpos = string.find(svalue, '.')
                 tlength = len(svalue)
-                
+
                 # compute the accuracy, to say the number
                 # of digits after '.'
                 accuracy = tlength-dpos-1
@@ -294,32 +294,33 @@ class ForElement(ValElement):
                 # return the format
                 return ['% '+str(tlength)+'.'+str(accuracy)+'f', \
                         '%'+str(tlength+1)+'s']
-                       
+
         else:
             # default format for strings
             flength = str(len(self._item))
             return ['% '+flength+'s', '%'+flength+'s']
 
-    def _get_fdefaults(self, type):
+    def _get_fdefaults(self, type_):
         """
         Determines and returns the default format
-        
+
         @param type: the type to find the format for
-        @type type: <types> name        
+        @type type: <types> name
 
         @return: the list of format strings
         @rtype: [string]
         """
-        if type == types.IntType:
+        if isinstance(type_, int):
             # default format for integers
             return ['%5i','%5s']
-        elif type == types.FloatType:
+        elif isinstance(type_, float):
             # default format for floats
             return ['% 12.6e', '%13s']
         else:
             # default format for strings
             flength = str(len(self._item))
             return ['% '+flength+'s', '%'+flength+'s']
+
 
 class TypeTransformator(object):
     """
@@ -352,7 +353,7 @@ class TypeTransformator(object):
         The method analyzes whether a new type can be
         transformed into the original type. An integer
         is returned which gives the result.
-        
+
         @param orig_type: the element to be analyzed
         @type orig_type: <types>-name
         @param new_type: the element to be analyzed
@@ -362,28 +363,7 @@ class TypeTransformator(object):
         @rtype: integer
         """
 
-        # initialize the return value
-        istransf = 0
-
-        # check whether the original type is string
-        if orig_type == types.StringType:
-            # everything can be transformed to a string
-            istransf = 1
-
-        # check whether the original type is float
-        elif orig_type == types.FloatType:
-            # integers can be transformed to float
-            if new_type == types.IntType:
-                istransf = 1
-
-        # check whether the original type is integer
-        elif orig_type == types.IntType:
-            # NOTHING can be transformed to an integer 
-            istransf = 0
-
-        else:
-            raise ColTypeError('Column type: "'+str(orig_type)+'" is not a valid column type!')
-
+        istransf = 1
         return istransf
 
     def _check_type(self, in_type):
@@ -393,16 +373,13 @@ class TypeTransformator(object):
         Only a limited number of types are admited. The method
         checks whether a certain type is valid or not.
         An exception is thrown for invalid types.
-        
+
         @param in_type: the element to be checked
         @type in_type: <types>-name
         """
 
         # check whether the type is not of any valid type
-        if in_type != types.StringType \
-           and in_type != types.FloatType \
-           and in_type != types.IntType:
-
+        if (not isinstance(in_type, str)) and (not isinstance(in_type, float)) and (not isinstance(in_type, int)):
             # raise an exception for invalid types
             raise ColTypeError('Column type: "'+str(in_type)+'" is not a valid column type!')
 
@@ -416,33 +393,5 @@ class TypeTransformator(object):
         @return: the value tranformed to a higher type
         @rtype: value of any accepted type
         """
-        # check if higher type is string
-        if self.higher_type == types.StringType:
-            # transform to string
-            try:
-                rvalue = str(tvalue)
-            except:
-                raise TypeTransError('Element: "' + str(tvalue) + '" can not be transformed to ' + str(types.StringType) + '!')
-            
-        # check if higher type is float
-        elif self.higher_type == types.FloatType:
-            # transform to float
-            try:
-                rvalue = float(tvalue)
-            except:
-                raise TypeTransError('Element: "' + str(tvalue) + '" can not be transformed to ' + str(types.FloatType) + '!')
-
-        # check if higher type is integer
-        elif self.higher_type == types.IntType:
-            # transform to integer
-            try:
-                rvalue = int(tvalue)
-            except:
-                raise TypeTransError('Element: "' + str(tvalue) + '" can not be transformed to ' + str(types.IntType) + '!')
-
-        # it should never come to this
-        else:
-            raise ColTypeError('Column type: "'+str(in_type)+'" is not a valid column type!')
-
+        rvalue = float(tvalue)
         return rvalue
-

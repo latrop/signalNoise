@@ -1,7 +1,8 @@
 """
 Author: Nicolas Cantale - n.cantale@gmail.com
 
-Small module wrapping sextractor. The idea is to have a single function taking an image and returning a sextractor catalog.
+Small module wrapping sextractor. The idea is to have a single function taking an image
+and returning a sextractor catalog.
 
 Dependencies:
  - sextractor (mandatory)
@@ -19,7 +20,8 @@ Usage:
 """
 
 from math import hypot
-import os, shutil
+import os
+import shutil
 from os import path
 import subprocess
 import asciidatalocal as asciidata
@@ -27,13 +29,13 @@ from numpy import genfromtxt, argsort
 
 
 def _setup_img(image, name):
-    if not type(image) == type(''):
+    if not isinstance(image, str):
         try:
             import pyfits
         except ImportError:
             from astropy.io import fits as pyfits
         pyfits.writeto(name, image)
-        
+
 
 def _get_cmd(img, img_ref, conf_args):
     ref = img_ref if img_ref is not None else ''
@@ -48,12 +50,13 @@ def _get_cmd(img, img_ref, conf_args):
     return cmd
 
 
-def _read_cat(path = 'alipysex.cat'):
+def _read_cat(path='alipysex.cat'):
     if os.path.exists(path):
         cat = asciidata.open(path)
         return cat
     else:
         return None
+
 
 def _cleanup():
     files = [f for f in os.listdir('.') if 'alipysex.' in f]
@@ -64,12 +67,12 @@ def _cleanup():
 
 
 def filterPolCat(catInName, catOutName, polarMode):
-    matchDist = 2.0 
+    matchDist = 2.0
     polarMode = polarMode.lower()
     cat = genfromtxt(catInName)
     # Sort catalogue by x-coordinate
     try:
-        cat = cat[argsort(cat[:,1])]
+        cat = cat[argsort(cat[:, 1])]
     except IndexError:
         # empty cat
         return None
@@ -111,78 +114,74 @@ def filterPolCat(catInName, catOutName, polarMode):
     fout.close()
 
 
-
-#def run(image='', imageref='', params=[], conf_file=DEFAULT_CONF, conf_args={}):
-def run(image='', imageref='', params=[], conf_file=None, conf_args={}, keepcat=True, rerun=False, catdir=None, polarMode=None):
+def run(image='', imageref='', params=[], conf_file=None, conf_args={}, keepcat=True,
+        rerun=False, catdir=None, polarMode=None):
     """
     Run sextractor on the given image with the given parameters.
-    
+
     image: filename or numpy array
     imageref: optional, filename or numpy array of the the reference image
     params: list of catalog's parameters to be returned
     conf_file: optional, filename of the sextractor catalog to be used
     conf_args: optional, list of arguments to be passed to sextractor (overrides the parameters in the conf file)
-    
-    
+
+
     keepcat : should I keep the sex cats ?
     rerun : should I rerun sex even when a cat is already present ?
     catdir : where to put the cats (default : next to the images)
-    
-    
+
+
     Returns an asciidata catalog containing the sextractor output
-    
+
     Usage exemple:
         import pysex
         cat = pysex.run(myimage, params=['X_IMAGE', 'Y_IMAGE', 'FLUX_APER'], conf_args={'PHOT_APERTURES':5})
         print cat['FLUX_APER']
     """
-    
+
     # Preparing permanent catalog filepath :
     (imgdir, filename) = os.path.split(image)
     (common, ext) = os.path.splitext(filename)
-    possibleCatName = os.path.join(imgdir, "%s.cat"%(common))
+    possibleCatName = os.path.join(imgdir, "%s.cat" % (common))
     if os.path.exists(possibleCatName):
         # there is prepared catalogue
         cat = _read_cat(possibleCatName)
-        return cat        
+        return cat
 
-    catfilename = common + "alipysexcat" # Does not get deleted by _cleanup(), even if in working dir !
+    catfilename = common + "alipysexcat"  # Does not get deleted by _cleanup(), even if in working dir !
     if keepcat:
         if catdir:
             if not os.path.isdir(catdir):
                 os.makedirs(catdir)
-                #raise RuntimeError("Directory \"%s\" for pysex cats does not exist. Make it !" % (catdir))
 
-    if catdir:    
+    if catdir:
         catpath = os.path.join(catdir, catfilename)
     else:
         catpath = os.path.join(imgdir, catfilename)
-    
+
     # Checking if permanent catalog already exists :
-    if rerun == False and type(image) == type(''):
+    if rerun is False and isinstance(image, str):
         if os.path.exists(catpath):
             cat = _read_cat(catpath)
             return cat
-    
+
     # Otherwise we run sex :
     if polarMode is None:
         conf_args['CATALOG_NAME'] = 'alipysex.cat'
     else:
         conf_args['CATALOG_NAME'] = 'alipysex_polar.cat'
     conf_args['PARAMETERS_NAME'] = path.join('lib', 'alipysex.param')
-    if 'VERBOSE_TYPE' in conf_args and conf_args['VERBOSE_TYPE']=='QUIET':
-        verbose = False
-    else: verbose = True 
     _cleanup()
-    if (not type(image) == type(''))  and (not type(image) == type(u'')):
+    if not isinstance(image, str):
         try:
             import pyfits
         except ImportError:
             from astropy.io import fits as pyfits
         im_name = 'alipysex.fits'
         pyfits.writeto(im_name, image.transpose())
-    else: im_name = image
-    if (not type(imageref) == type('')) and (not type(imageref) == type(u'')):
+    else:
+        im_name = image
+    if not isinstance(imageref, str):
         try:
             import pyfits
         except ImportError:
@@ -190,23 +189,23 @@ def run(image='', imageref='', params=[], conf_file=None, conf_args={}, keepcat=
 
         imref_name = 'alipysex.ref.fits'
         pyfits.writeto(imref_name, imageref.transpose())
-    else: imref_name = imageref
+    else:
+        imref_name = imageref
     cmd = _get_cmd(im_name, imref_name, conf_args)
     res = subprocess.call(cmd, shell=True)
     if res:
-        print "Error during sextractor execution!"
+        print("Error during sextractor execution!")
         _cleanup()
         return
 
     # Clean polar data if necessary
-    if not polarMode is None:
+    if polarMode is not None:
         filterPolCat("alipysex_polar.cat", "alipysex.cat", polarMode)
     # Keeping the cat at a permanent location :
-    if keepcat and type(image) == type(''):
+    if keepcat and isinstance(image, str):
         shutil.copy('alipysex.cat', catpath)
-    
-    # Returning the cat :         
+
+    # Returning the cat :
     cat = _read_cat()
     # _cleanup()
     return cat
-

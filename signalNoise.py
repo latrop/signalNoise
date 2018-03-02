@@ -7,7 +7,7 @@ from os import path
 import numpy as np
 from shutil import move
 from collections import OrderedDict
-import Tkinter as Tk
+import tkinter as Tk
 
 try:
     import pyfits
@@ -258,12 +258,13 @@ class MainApplication(Tk.Frame):
         # Subtract bias and dark files
         if newRawImages:
             flat = self.flats[self.filtName.lower()]
-            newCleanImages, biasValue, darkValue = reduction.fix_for_bias_dark_and_flat(self.dirName, newRawImages,
-                                                                                        self.masterDarkData,
-                                                                                        self.masterBiasData, flat)
-            if not newCleanImages:
+            self.newCleanImages, self.biasValue, self.darkValue \
+                = reduction.fix_for_bias_dark_and_flat(self.dirName, newRawImages,
+                                                       self.masterDarkData,
+                                                       self.masterBiasData, flat)
+            if not self.newCleanImages:
                 return
-            self.darkCleanImages.extend(newCleanImages)
+            self.darkCleanImages.extend(self.newCleanImages)
 
         # Coadd images
         if not self.polarMode:
@@ -353,7 +354,7 @@ class MainApplication(Tk.Frame):
         # make aperture photometry of object and standarts
         if not self.polarMode:
             objSn, objMag, objMagSigma, stSn = se.get_photometry(self.seCat, self.ref, self.filtName, aperRadius,
-                                                                 biasValue, darkValue, backData)
+                                                                 self.biasValue, self.darkValue, backData)
             self.rightPanel.show_photometry_data(objSn, objMag, objMagSigma, stSn)
             self.magData.append((self.numOfCoaddedImages, objMag))
             # store magnitude value to a photomerty log
@@ -361,7 +362,7 @@ class MainApplication(Tk.Frame):
 
         elif self.polarMode:
             objSn, objPairSn, stSn, fluxRatios = se.get_photometry_polar_mode(self.seCatPolar, self.ref, aperRadius,
-                                                                              biasValue, darkValue, backData)
+                                                                              self.biasValue, self.darkValue, backData)
             self.rightPanel.show_photometry_data_polar_mode(objSn, objPairSn, stSn, fluxRatios)
 
         # Check if object sn ratio decreased (for example due to a cloud)
