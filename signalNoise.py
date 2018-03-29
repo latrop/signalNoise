@@ -366,7 +366,8 @@ class MainApplication(Tk.Frame):
             self.rightPanel.show_photometry_data_polar_mode(objSn, objPairSn, stSn, fluxRatios)
 
         # Check if object sn ratio decreased (for example due to a cloud)
-        if ((None not in (objSn, self.objSn)) and (objSn < self.objSn)) and se.all_st_sn_decreased(self.stSn, stSn, self.polarMode):
+        if ((None not in (objSn, self.objSn)) and (objSn < self.objSn)) \
+           and se.all_st_sn_decreased(self.stSn, stSn, self.polarMode):
             for f in newRawImages:
                 objName = path.splitext(path.basename(f))[0]
                 self.badObjects.append(objName)
