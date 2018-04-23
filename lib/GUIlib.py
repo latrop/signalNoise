@@ -10,6 +10,7 @@ from tkinter import font as tkFont
 from tkinter import filedialog as tkFileDialog
 from tkinter import messagebox as tkMessageBox
 from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
+from matplotlib import rc
 import pylab
 try:
     import pyfits
@@ -19,6 +20,8 @@ import numpy as np
 
 from reduction import parse_object_file_name
 
+
+rc('text', usetex=False)
 
 class MenuBar(Tk.Frame):
     def __init__(self, window):
@@ -107,11 +110,12 @@ class ImagPanel(Tk.Frame):
         self.objPairPlotInstance = None
         self.standartsPairPlotInstance = []
         self.hotPixelsPlotInstance = []
+        self.messagePlotInstance = None
 
         self.canvas.show()
         self.canvas.get_tk_widget().grid(column=0, row=0)
 
-    def remove_objects_from_plot(self, upDateFigure=False):
+    def remove_objects_from_plot(self, updateFigure=False):
         if self.objPlotInstance:
             self.objPlotInstance.remove()
             self.objPlotInstance = None
@@ -124,7 +128,10 @@ class ImagPanel(Tk.Frame):
             self.standartsPairPlotInstance.pop().remove()
         while self.hotPixelsPlotInstance:
             self.hotPixelsPlotInstance.pop().remove()
-        if upDateFigure:
+        if self.messagePlotInstance is not None:
+            self.messagePlotInstance.remove()
+            self.messagePlotInstance = None
+        if updateFigure:
             self.canvas.show()
 
     def plot_fits_file(self, fitsName):
@@ -199,6 +206,16 @@ class ImagPanel(Tk.Frame):
             self.hotPixelsPlotInstance.append(self.fig.plot(hotPixels[1], hotPixels[0], marker="x", markersize=5,
                                                             markeredgecolor="b", markerfacecolor="b",
                                                             markeredgewidth=1, linestyle="")[0])
+        self.canvas.show()
+
+    def show_message(self, message):
+        self.remove_objects_from_plot()
+        if self.fitsPlotInstance:
+            # remove previous plot if exists
+            self.fitsPlotInstance.remove()
+            self.fitsPlotInstance = None
+        self.messagePlotInstance = self.fig.text(x=0.5, y=0.5, s=message, ha='center',
+                                                 fontsize=16, transform=self.fig.transAxes)
         self.canvas.show()
 
 

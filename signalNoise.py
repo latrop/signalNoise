@@ -69,6 +69,7 @@ class MainApplication(Tk.Frame):
         self.menubar = GUIlib.MenuBar(self)
         self.imagPanel = GUIlib.ImagPanel(self)
         self.rightPanel = GUIlib.RightPanel(self)
+        self.imagPanel.show_message("Welcome to SignalNoise!\nPlease choose a data directory.")
         self.root.mainloop()
 
     def on_closing(self):
@@ -79,8 +80,8 @@ class MainApplication(Tk.Frame):
         self.cycle()
 
     def cycle(self):
-        self.check_out_files()
-        if self.objName is not None:
+        res = self.check_out_files()
+        if (self.objName is not None) or (res == 0):
             self.rightPanel.update_object_info(self.objName, self.filtName, self.addString)
             self.run_computation()
         else:
@@ -91,13 +92,28 @@ class MainApplication(Tk.Frame):
     def check_out_files(self):
         allFiles = glob.glob(path.join(self.dirName, "*.FIT"))
         lightFiles = []
+        darkFiles = []
+        biasFiles = []
         # get rid of dark files and subdirectories
         for f in allFiles:
             fName = path.basename(f)
             if ("dark" not in fName) and ("bias" not in fName) and (path.isfile(f)):
                 lightFiles.append(f)
+            elif "dark" in fName:
+                darkFiles.append(f)
+            elif "bias" in fName:
+                biasFiles.append(f)
+        msg = ""
+        if len(biasFiles) < 5:
+            msg += "Waiting for bias files (%i/5)\n" % len(biasFiles)
+        if len(darkFiles) < 3:
+            msg += "Waiting for dark files (%i/3)""" % len(darkFiles)
+        if msg:
+            self.imagPanel.show_message(msg)
+            return 1
         if len(lightFiles) == 0:
-            return
+            self.imagPanel.show_message("Waiting for light exposure.")
+            return 1
         newestFile = max(lightFiles, key=path.getctime)
         fNameWithoutPath = path.basename(newestFile)
         # Let's find what object is it
@@ -105,11 +121,17 @@ class MainApplication(Tk.Frame):
             (self.objName, self.filtName,
              self.addString, self.frameNumber) = reduction.parse_object_file_name(fNameWithoutPath)
 
+        if len(lightFiles) and (self.objName is None):
+            # Current object do not have a reference
+            self.imagPanel.show_message("No reference for this object:\n %s" % path.splitext(fNameWithoutPath)[0][:-4])
+            return 1
+
         # Determine if exposure is in polar mode
         if (self.filtName is not None) and (self.filtName.lower() in ("x", "y")):
             self.polarMode = True
         else:
             self.polarMode = False
+        return 0
 
     def clean_work_dir(self):
         for fName in glob.glob(path.join("workDir", "%s*_affineremap.fits" % self.currentObject)):
@@ -135,9 +157,10 @@ class MainApplication(Tk.Frame):
         self.currentObject = self.objName
         self.currentAddString = self.addString
         self.ref = alignment.Reference(self.objName)
-        self.masterDarkData, darkNumber, self.hotPixels = reduction.make_master_dark(self.dirName)
-        self.rightPanel.update_message("Dark", "Number %s" % darkNumber)
         self.masterBiasData = reduction.make_master_bias(self.dirName)
+        self.masterDarkData, darkNumber, self.hotPixels = reduction.make_master_dark(self.dirName)
+        if self.masterDarkData is not None:
+            self.rightPanel.update_message("Dark", "Number %s" % darkNumber)
         objStr = "%s:%s" % (self.objName, self.addString)
         if objStr not in self.photoLog:
             # we only want to add a new object if there is no such

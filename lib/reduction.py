@@ -15,6 +15,9 @@ def make_master_dark(pathToDir):  # TODO What if no dark files found?
     given directory"""
     outPath = path.join("workDir", "master_dark.fits")
     allDarks = glob.glob(path.join(pathToDir, "dark*.FIT"))
+    if len(allDarks) < 3:
+        # Not enough dark files were grabbed
+        return None, 0, None
     lastDarks = sorted(allDarks, key=path.getctime)[-3:]
     darkNumber = path.split(lastDarks[0])[-1][4:-7]
     if (not path.exists(outPath)) or (path.getctime(outPath) < path.getctime(lastDarks[0])):
@@ -37,6 +40,8 @@ def make_master_bias(pathToDir):  # the same quesion
     outPath = path.join("workDir", "master_bias.fits")
     if not path.exists(outPath):
         allBiases = glob.glob(path.join(pathToDir, "bias*.FIT"))
+        if len(allBiases) != 5:
+            return None
         masterBiasData = np.median([safe_open_fits(fName)[0].data for fName in allBiases], axis=0)
         masterBiasHDU = pyfits.PrimaryHDU(data=masterBiasData)
         masterBiasHDU.writeto(outPath, clobber=True)
