@@ -593,6 +593,8 @@ class SelectObjectWindow(Tk.Frame):
             fNameWithoutPath = path.basename(fName)
             if ("dark" not in fNameWithoutPath) and ("bias" not in fNameWithoutPath) and (path.isfile(fName)):
                 objName, filtName, addString, frameNumber = parse_object_file_name(fNameWithoutPath)
+                if objName is None:
+                    continue
                 objStr = "%s:%s" % (objName, addString)
                 if objStr not in self.list_of_all_observed_objects:
                     # A new object found -> add it to the dictionary
