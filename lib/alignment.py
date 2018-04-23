@@ -202,5 +202,5 @@ def coadd_images(imageList, polarMode):
     # save summed data to summed.fits file
     outHdu = pyfits.PrimaryHDU(data=data)
     pathToFile = path.join("workDir", "summed.fits")
-    outHdu.writeto(pathToFile, clobber=True)
+    outHdu.writeto(pathToFile, overwrite=True)
     return len(imagesToCoadd)

@@ -25,7 +25,7 @@ def make_master_dark(pathToDir):  # TODO What if no dark files found?
         # we need to create a new one
         masterDarkData = np.median([safe_open_fits(fName)[0].data for fName in lastDarks], axis=0)
         masterDarkHDU = pyfits.PrimaryHDU(data=masterDarkData)
-        masterDarkHDU.writeto(outPath, clobber=True)
+        masterDarkHDU.writeto(outPath, overwrite=True)
     else:
         # else hust use existing master dark
         masterDarkData = safe_open_fits(outPath)[0].data.copy()
@@ -44,7 +44,7 @@ def make_master_bias(pathToDir):  # the same quesion
             return None
         masterBiasData = np.median([safe_open_fits(fName)[0].data for fName in allBiases], axis=0)
         masterBiasHDU = pyfits.PrimaryHDU(data=masterBiasData)
-        masterBiasHDU.writeto(outPath, clobber=True)
+        masterBiasHDU.writeto(outPath, overwrite=True)
     else:
         masterBiasData = safe_open_fits(outPath)[0].data.copy()
     return masterBiasData
