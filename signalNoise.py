@@ -368,7 +368,7 @@ class MainApplication(Tk.Frame):
             # to encrease S/N ratio.
             self.rightPanel.update_message("Error", "matching failed")
             # Remove object marks from image
-            self.imagPanel.remove_objects_from_plot(upDateFigure=True)
+            self.imagPanel.remove_objects_from_plot(updateFigure=True)
             return
         else:
             self.rightPanel.update_message("Error", "")
