@@ -1,2 +1,2 @@
 # signalNoise
-On the fly data reduction for sbig ST7 camera
+Moved to Microsoft-free BitBucket: https://bitbucket.org/latrop/signalnoise/src/master/
